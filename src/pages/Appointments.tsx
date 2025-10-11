@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
+import { AppointmentCheckoutDialog } from '@/components/AppointmentCheckoutDialog';
 
 interface Appointment {
   id: string;
@@ -24,7 +25,14 @@ const mockAppointments: Appointment[] = [
 
 export default function Appointments() {
   const [appointments] = useState<Appointment[]>(mockAppointments);
+  const [checkoutAppointment, setCheckoutAppointment] = useState<Appointment | null>(null);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const { can } = usePermission();
+
+  const handleCheckout = (appointment: Appointment) => {
+    setCheckoutAppointment(appointment);
+    setCheckoutDialogOpen(true);
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -83,6 +91,17 @@ export default function Appointments() {
       header: 'Ações',
       render: (appointment: Appointment) => (
         <div className="flex gap-2">
+          {(appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
+            can('appointments', 'edit') && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCheckout(appointment)}
+                title="Finalizar Atendimento"
+              >
+                <DollarSign className="h-4 w-4 text-success" />
+              </Button>
+            )}
           {can('appointments', 'edit') && (
             <Button variant="ghost" size="icon">
               <Edit className="h-4 w-4" />
@@ -119,6 +138,12 @@ export default function Appointments() {
         data={appointments}
         columns={columns}
         searchPlaceholder="Buscar agendamentos..."
+      />
+
+      <AppointmentCheckoutDialog
+        open={checkoutDialogOpen}
+        onOpenChange={setCheckoutDialogOpen}
+        appointment={checkoutAppointment}
       />
     </div>
   );
