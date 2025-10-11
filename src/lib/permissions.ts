@@ -1,0 +1,52 @@
+import { Role, Permission, Action, Screen } from '@/types/auth';
+
+// RBAC Configuration - Define permissions by role
+export const rolePermissions: Record<Role, Permission[]> = {
+  admin: [
+    { screen: 'dashboard', actions: ['view'] },
+    { screen: 'users', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'services', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'items', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'appointments', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'item-prices', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'item-price-histories', actions: ['view'] },
+  ],
+  manager: [
+    { screen: 'dashboard', actions: ['view'] },
+    { screen: 'services', actions: ['view', 'create', 'edit'] },
+    { screen: 'items', actions: ['view', 'create', 'edit'] },
+    { screen: 'appointments', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'item-prices', actions: ['view', 'edit'] },
+    { screen: 'item-price-histories', actions: ['view'] },
+  ],
+  professional: [
+    { screen: 'dashboard', actions: ['view'] },
+    { screen: 'services', actions: ['view'] },
+    { screen: 'appointments', actions: ['view', 'edit'] },
+  ],
+  receptionist: [
+    { screen: 'dashboard', actions: ['view'] },
+    { screen: 'appointments', actions: ['view', 'create', 'edit'] },
+    { screen: 'services', actions: ['view'] },
+  ],
+};
+
+export function getUserPermissions(role: Role): Permission[] {
+  return rolePermissions[role] || [];
+}
+
+export function hasPermission(
+  permissions: Permission[],
+  screen: Screen,
+  action: Action
+): boolean {
+  const screenPermission = permissions.find((p) => p.screen === screen);
+  return screenPermission?.actions.includes(action) ?? false;
+}
+
+export function canAccessScreen(
+  permissions: Permission[],
+  screen: Screen
+): boolean {
+  return permissions.some((p) => p.screen === screen && p.actions.length > 0);
+}

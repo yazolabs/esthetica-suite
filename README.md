@@ -1,73 +1,167 @@
-# Welcome to your Lovable project
+# Sistema de Gestão - Salão de Beleza
 
-## Project info
+Sistema completo de gestão para salões de beleza, incluindo agendamentos, controle de serviços, estoque, preços e controle de acesso baseado em roles (RBAC).
 
-**URL**: https://lovable.dev/projects/0b77f83f-dec7-4e5f-8472-80a87bd0e175
+## 🚀 Tecnologias
 
-## How can I edit this code?
+- **React 18** + **TypeScript**
+- **Vite** (build tool)
+- **TailwindCSS** (estilização)
+- **React Router** (navegação)
+- **TanStack Query** (gerenciamento de estado server)
+- **React Hook Form + Zod** (formulários e validação)
+- **Shadcn/ui** (componentes)
+- **Lucide React** (ícones)
+- **Axios** (requisições HTTP)
 
-There are several ways of editing your application.
+## 📋 Funcionalidades
 
-**Use Lovable**
+- ✅ Sistema de autenticação com RBAC (admin, manager, professional, receptionist)
+- ✅ Dashboard com visão geral e estatísticas
+- ✅ Gestão de Usuários (apenas admin)
+- ✅ Gestão de Serviços
+- ✅ Gestão de Itens e Estoque
+- ✅ Gestão de Agendamentos
+- ✅ Controle de Preços de Itens
+- ✅ Histórico de Alterações de Preços
+- ✅ Sidebar responsiva e colapsável
+- ✅ Tabelas com busca, paginação e ordenação
+- ✅ Code-splitting e lazy loading
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0b77f83f-dec7-4e5f-8472-80a87bd0e175) and start prompting.
+## 🔐 Controle de Acesso (RBAC)
 
-Changes made via Lovable will be committed automatically to this repo.
+### Perfis de Usuário
 
-**Use your preferred IDE**
+- **Admin**: Acesso total a todas as funcionalidades
+- **Manager**: Gerenciamento de serviços, itens, agendamentos e preços
+- **Professional**: Visualização e edição de serviços e agendamentos
+- **Receptionist**: Visualização e criação de agendamentos
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Permissões por Tela
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Cada perfil possui permissões granulares definidas no arquivo `src/lib/permissions.ts`:
+- `view`: Visualizar dados
+- `create`: Criar novos registros
+- `edit`: Editar registros existentes
+- `delete`: Deletar registros
 
-Follow these steps:
+## 🛠️ Instalação e Execução
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Pré-requisitos
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Node.js 18+ 
+- npm ou yarn
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Passos
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# Clone o repositório
+git clone <URL_DO_REPOSITORIO>
+
+# Entre no diretório
+cd <NOME_DO_PROJETO>
+
+# Instale as dependências
+npm install
+
+# Execute o projeto em modo desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O projeto estará disponível em `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build para Produção
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+npm run preview
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔑 Credenciais de Teste
 
-## What technologies are used for this project?
+**Nota:** O login atual é simulado (localStorage). Use as credenciais abaixo:
 
-This project is built with:
+- **Admin**: `admin` / `admin123`
+- **Manager**: `manager` / `manager123`
+- **Professional**: `professional` / `professional123`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📁 Estrutura do Projeto
 
-## How can I deploy this project?
+```
+src/
+├── components/          # Componentes reutilizáveis
+│   ├── ui/             # Componentes shadcn/ui
+│   ├── AppSidebar.tsx  # Sidebar principal
+│   ├── DataTable.tsx   # Tabela reutilizável
+│   ├── Navbar.tsx      # Barra de navegação
+│   └── ...
+├── hooks/              # Hooks customizados
+│   ├── useAuthUser.ts  # Hook de autenticação
+│   └── usePermission.ts # Hook de permissões RBAC
+├── lib/                # Utilitários
+│   └── permissions.ts  # Configuração de permissões RBAC
+├── pages/              # Páginas da aplicação
+│   ├── Dashboard.tsx
+│   ├── Users.tsx
+│   ├── Services.tsx
+│   ├── Items.tsx
+│   ├── Appointments.tsx
+│   ├── ItemPrices.tsx
+│   └── ItemPriceHistories.tsx
+├── services/           # Serviços e API
+│   └── api.ts          # Configuração Axios
+├── types/              # Tipos TypeScript
+│   └── auth.ts         # Tipos de autenticação
+└── App.tsx             # Componente raiz
+```
 
-Simply open [Lovable](https://lovable.dev/projects/0b77f83f-dec7-4e5f-8472-80a87bd0e175) and click on Share -> Publish.
+## 🔗 Integração API
 
-## Can I connect a custom domain to my Lovable project?
+O sistema está preparado para integração com Laravel Sanctum. Configure a URL base da API:
 
-Yes, you can!
+### Variável de Ambiente
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Crie um arquivo `.env` na raiz do projeto:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```env
+VITE_API_URL=http://localhost:8010/api
+```
+
+### Query Keys Padronizadas
+
+As chaves de cache do TanStack Query estão definidas em `src/services/api.ts`:
+
+- `['users']` - Usuários
+- `['services']` - Serviços
+- `['items']` - Itens
+- `['appointments']` - Agendamentos
+- `['item-prices']` - Preços de Itens
+- `['item-price-histories']` - Histórico de Preços
+
+## 🎨 Design System
+
+O design system está configurado em:
+- `src/index.css` - Variáveis CSS (cores HSL, sombras, gradientes)
+- `tailwind.config.ts` - Configuração Tailwind
+
+### Cores Principais
+
+- **Primary**: `#FF5733` (laranja vibrante)
+- **Secondary**: `#C70039` (vermelho elegante)
+
+## 🧪 Testes
+
+```bash
+npm run test
+```
+
+## 📚 Recursos Adicionais
+
+- [React Documentation](https://react.dev/)
+- [TailwindCSS Documentation](https://tailwindcss.com/)
+- [TanStack Query Documentation](https://tanstack.com/query)
+- [Shadcn/ui Components](https://ui.shadcn.com/)
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
