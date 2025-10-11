@@ -1,9 +1,136 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, Scissors, TrendingUp } from 'lucide-react';
+import { Users, Calendar, Scissors, TrendingUp, Clock } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+
+interface WorkSchedule {
+  dayOfWeek: string;
+  isWorkingDay: boolean;
+  morningStart: string;
+  morningEnd: string;
+  afternoonStart: string;
+  afternoonEnd: string;
+}
+
+interface Professional {
+  id: string;
+  name: string;
+  services: string[];
+  schedule: WorkSchedule[];
+}
+
+interface Appointment {
+  id: string;
+  professionalId: string;
+  clientName: string;
+  service: string;
+  time: string;
+  status: 'scheduled' | 'in-progress' | 'completed';
+}
+
+const mockProfessionals: Professional[] = [
+  {
+    id: '1',
+    name: 'Maria Santos',
+    services: ['Corte Feminino', 'Escova', 'Coloração'],
+    schedule: [
+      { dayOfWeek: 'Segunda-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+      { dayOfWeek: 'Terça-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+      { dayOfWeek: 'Quarta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+      { dayOfWeek: 'Quinta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+      { dayOfWeek: 'Sexta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+      { dayOfWeek: 'Sábado', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '', afternoonEnd: '' },
+      { dayOfWeek: 'Domingo', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+    ],
+  },
+  {
+    id: '2',
+    name: 'João Pedro',
+    services: ['Corte Masculino'],
+    schedule: [
+      { dayOfWeek: 'Segunda-feira', isWorkingDay: true, morningStart: '09:00', morningEnd: '13:00', afternoonStart: '14:00', afternoonEnd: '19:00' },
+      { dayOfWeek: 'Terça-feira', isWorkingDay: true, morningStart: '09:00', morningEnd: '13:00', afternoonStart: '14:00', afternoonEnd: '19:00' },
+      { dayOfWeek: 'Quarta-feira', isWorkingDay: true, morningStart: '09:00', morningEnd: '13:00', afternoonStart: '14:00', afternoonEnd: '19:00' },
+      { dayOfWeek: 'Quinta-feira', isWorkingDay: true, morningStart: '09:00', morningEnd: '13:00', afternoonStart: '14:00', afternoonEnd: '19:00' },
+      { dayOfWeek: 'Sexta-feira', isWorkingDay: true, morningStart: '09:00', morningEnd: '13:00', afternoonStart: '14:00', afternoonEnd: '19:00' },
+      { dayOfWeek: 'Sábado', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+      { dayOfWeek: 'Domingo', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Paula Costa',
+    services: ['Manicure', 'Pedicure'],
+    schedule: [
+      { dayOfWeek: 'Segunda-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '13:00', afternoonEnd: '17:00' },
+      { dayOfWeek: 'Terça-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '13:00', afternoonEnd: '17:00' },
+      { dayOfWeek: 'Quarta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '13:00', afternoonEnd: '17:00' },
+      { dayOfWeek: 'Quinta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '13:00', afternoonEnd: '17:00' },
+      { dayOfWeek: 'Sexta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '13:00', afternoonEnd: '17:00' },
+      { dayOfWeek: 'Sábado', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '', afternoonEnd: '' },
+      { dayOfWeek: 'Domingo', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+    ],
+  },
+];
+
+const mockAppointments: Appointment[] = [
+  { id: '1', professionalId: '1', clientName: 'Ana Silva', service: 'Corte Feminino', time: '09:00', status: 'scheduled' },
+  { id: '2', professionalId: '1', clientName: 'Beatriz Lima', service: 'Escova', time: '11:00', status: 'in-progress' },
+  { id: '3', professionalId: '2', clientName: 'Carlos Souza', service: 'Corte Masculino', time: '10:00', status: 'scheduled' },
+  { id: '4', professionalId: '3', clientName: 'Diana Costa', service: 'Manicure', time: '08:30', status: 'completed' },
+  { id: '5', professionalId: '3', clientName: 'Eduardo Mendes', service: 'Pedicure', time: '14:00', status: 'scheduled' },
+];
 
 export default function Dashboard() {
   const { user } = useAuthUser();
+  const [selectedDate] = useState(new Date());
+  
+  const getCurrentDayOfWeek = () => {
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    return days[selectedDate.getDay()];
+  };
+
+  const getWorkingHours = (professional: Professional) => {
+    const today = getCurrentDayOfWeek();
+    const todaySchedule = professional.schedule.find(s => s.dayOfWeek === today);
+    
+    if (!todaySchedule || !todaySchedule.isWorkingDay) {
+      return 'Folga';
+    }
+    
+    const periods = [];
+    if (todaySchedule.morningStart && todaySchedule.morningEnd) {
+      periods.push(`${todaySchedule.morningStart}-${todaySchedule.morningEnd}`);
+    }
+    if (todaySchedule.afternoonStart && todaySchedule.afternoonEnd) {
+      periods.push(`${todaySchedule.afternoonStart}-${todaySchedule.afternoonEnd}`);
+    }
+    
+    return periods.join(' | ') || 'Sem horário definido';
+  };
+
+  const getProfessionalAppointments = (professionalId: string) => {
+    return mockAppointments.filter(apt => apt.professionalId === professionalId);
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'default';
+      case 'in-progress': return 'secondary';
+      case 'completed': return 'outline';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'Agendado';
+      case 'in-progress': return 'Em Atendimento';
+      case 'completed': return 'Concluído';
+      default: return status;
+    }
+  };
 
   const stats = [
     {
@@ -63,6 +190,89 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
+
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Agenda dos Profissionais - {getCurrentDayOfWeek()}
+          </CardTitle>
+          <CardDescription>
+            Visualize os horários de trabalho e agendamentos de cada profissional
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {mockProfessionals.map((professional) => {
+              const appointments = getProfessionalAppointments(professional.id);
+              const workingHours = getWorkingHours(professional);
+              const isWorking = workingHours !== 'Folga';
+              
+              return (
+                <div key={professional.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-base">{professional.name}</h3>
+                      <div className="flex flex-wrap gap-1">
+                        {professional.services.map((service, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {service}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className={isWorking ? 'text-foreground' : 'text-muted-foreground'}>
+                        {workingHours}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isWorking && (
+                    <div className="space-y-2 mt-3 pt-3 border-t">
+                      <p className="text-xs font-medium text-muted-foreground uppercase">
+                        Agendamentos de Hoje
+                      </p>
+                      {appointments.length > 0 ? (
+                        <div className="space-y-2">
+                          {appointments.map((apt) => (
+                            <div
+                              key={apt.id}
+                              className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-sm">{apt.time}</span>
+                                <div>
+                                  <p className="text-sm font-medium">{apt.clientName}</p>
+                                  <p className="text-xs text-muted-foreground">{apt.service}</p>
+                                </div>
+                              </div>
+                              <Badge variant={getStatusBadgeVariant(apt.status)} className="text-xs">
+                                {getStatusLabel(apt.status)}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          Sem agendamentos para hoje
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {!isWorking && (
+                    <p className="text-sm text-muted-foreground italic pt-2 border-t">
+                      Profissional não trabalha neste dia
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-md">

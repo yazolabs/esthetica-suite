@@ -27,11 +27,38 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
+interface WorkSchedule {
+  dayOfWeek: string;
+  isWorkingDay: boolean;
+  morningStart: string;
+  morningEnd: string;
+  afternoonStart: string;
+  afternoonEnd: string;
+}
+
+const defaultSchedule: WorkSchedule[] = [
+  { dayOfWeek: 'Segunda-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Terça-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Quarta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Quinta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Sexta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Sábado', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '', afternoonEnd: '' },
+  { dayOfWeek: 'Domingo', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+];
+
 const professionalSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(1, 'Telefone é obrigatório'),
   services: z.array(z.string()).min(1, 'Selecione pelo menos um serviço'),
+  schedule: z.array(z.object({
+    dayOfWeek: z.string(),
+    isWorkingDay: z.boolean(),
+    morningStart: z.string(),
+    morningEnd: z.string(),
+    afternoonStart: z.string(),
+    afternoonEnd: z.string(),
+  })),
 });
 
 interface Professional {
@@ -40,6 +67,7 @@ interface Professional {
   email: string;
   phone: string;
   services: string[];
+  schedule: WorkSchedule[];
   status: 'active' | 'inactive';
 }
 
@@ -61,6 +89,7 @@ const mockProfessionals: Professional[] = [
     email: 'maria@salao.com',
     phone: '(11) 98765-4321',
     services: ['1', '6', '7', '8'],
+    schedule: defaultSchedule,
     status: 'active',
   },
   {
@@ -69,6 +98,7 @@ const mockProfessionals: Professional[] = [
     email: 'joao@salao.com',
     phone: '(11) 98765-4322',
     services: ['2'],
+    schedule: defaultSchedule,
     status: 'active',
   },
   {
@@ -77,6 +107,7 @@ const mockProfessionals: Professional[] = [
     email: 'paula@salao.com',
     phone: '(11) 98765-4323',
     services: ['3', '4'],
+    schedule: defaultSchedule,
     status: 'active',
   },
   {
@@ -85,6 +116,7 @@ const mockProfessionals: Professional[] = [
     email: 'rita@salao.com',
     phone: '(11) 98765-4324',
     services: ['5'],
+    schedule: defaultSchedule,
     status: 'active',
   },
 ];
@@ -102,6 +134,7 @@ export default function Professionals() {
       email: '',
       phone: '',
       services: [],
+      schedule: defaultSchedule,
     },
   });
 
@@ -112,6 +145,7 @@ export default function Professionals() {
       email: '',
       phone: '',
       services: [],
+      schedule: defaultSchedule,
     });
     setDialogOpen(true);
   };
@@ -123,6 +157,7 @@ export default function Professionals() {
       email: professional.email,
       phone: professional.phone,
       services: professional.services,
+      schedule: professional.schedule || defaultSchedule,
     });
     setDialogOpen(true);
   };
@@ -137,7 +172,14 @@ export default function Professionals() {
       setProfessionals(
         professionals.map((p) =>
           p.id === editingProfessional.id
-            ? { ...p, ...data }
+            ? { 
+                ...p, 
+                name: data.name, 
+                email: data.email, 
+                phone: data.phone, 
+                services: data.services, 
+                schedule: data.schedule as WorkSchedule[]
+              }
             : p
         )
       );
@@ -149,6 +191,7 @@ export default function Professionals() {
         email: data.email,
         phone: data.phone,
         services: data.services,
+        schedule: data.schedule as WorkSchedule[],
         status: 'active',
       };
       setProfessionals([...professionals, newProfessional]);
@@ -249,13 +292,13 @@ export default function Professionals() {
       />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
             </DialogTitle>
             <DialogDescription>
-              Preencha os dados do profissional e selecione os serviços que ele pode realizar.
+              Preencha os dados do profissional, selecione os serviços e configure os horários de atendimento.
             </DialogDescription>
           </DialogHeader>
 
@@ -350,6 +393,94 @@ export default function Professionals() {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-4 border-t pt-4">
+                <FormLabel className="text-base">Horários de Atendimento</FormLabel>
+                {form.watch('schedule')?.map((day, index) => (
+                  <div key={day.dayOfWeek} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-sm font-medium">{day.dayOfWeek}</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name={`schedule.${index}.isWorkingDay`}
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-xs font-normal">Dia útil</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {form.watch(`schedule.${index}.isWorkingDay`) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <FormLabel className="text-xs text-muted-foreground">Manhã</FormLabel>
+                          <div className="flex gap-2">
+                            <FormField
+                              control={form.control}
+                              name={`schedule.${index}.morningStart`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <span className="text-muted-foreground self-center">às</span>
+                            <FormField
+                              control={form.control}
+                              name={`schedule.${index}.morningEnd`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <FormLabel className="text-xs text-muted-foreground">Tarde</FormLabel>
+                          <div className="flex gap-2">
+                            <FormField
+                              control={form.control}
+                              name={`schedule.${index}.afternoonStart`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <span className="text-muted-foreground self-center">às</span>
+                            <FormField
+                              control={form.control}
+                              name={`schedule.${index}.afternoonEnd`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
