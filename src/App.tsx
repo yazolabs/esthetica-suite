@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Users = lazy(() => import("./pages/Users"));
 const Services = lazy(() => import("./pages/Services"));
+const Professionals = lazy(() => import("./pages/Professionals"));
 const Items = lazy(() => import("./pages/Items"));
 const Appointments = lazy(() => import("./pages/Appointments"));
 const ItemPrices = lazy(() => import("./pages/ItemPrices"));
@@ -66,6 +67,16 @@ const App = () => (
                 <ProtectedRoute screen="services">
                   <SidebarLayout>
                     <Services />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/professionals"
+              element={
+                <ProtectedRoute screen="professionals">
+                  <SidebarLayout>
+                    <Professionals />
                   </SidebarLayout>
                 </ProtectedRoute>
               }

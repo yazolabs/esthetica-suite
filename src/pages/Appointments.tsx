@@ -10,17 +10,24 @@ interface Appointment {
   id: string;
   client: string;
   service: string;
-  professional: string;
+  professionals: string[];
   date: string;
   time: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
 }
 
+const mockProfessionals = [
+  { id: '1', name: 'Maria Santos' },
+  { id: '2', name: 'João Pedro' },
+  { id: '3', name: 'Paula Costa' },
+  { id: '4', name: 'Rita Moura' },
+];
+
 const mockAppointments: Appointment[] = [
-  { id: '1', client: 'Ana Silva', service: 'Corte Feminino', professional: 'Maria Santos', date: '2025-10-15', time: '14:00', status: 'scheduled' },
-  { id: '2', client: 'Carlos Souza', service: 'Corte Masculino', professional: 'João Pedro', date: '2025-10-15', time: '15:00', status: 'confirmed' },
-  { id: '3', client: 'Beatriz Lima', service: 'Manicure', professional: 'Paula Costa', date: '2025-10-15', time: '16:00', status: 'completed' },
-  { id: '4', client: 'Diego Alves', service: 'Massagem', professional: 'Rita Moura', date: '2025-10-16', time: '10:00', status: 'cancelled' },
+  { id: '1', client: 'Ana Silva', service: 'Corte Feminino', professionals: ['1'], date: '2025-10-15', time: '14:00', status: 'scheduled' },
+  { id: '2', client: 'Carlos Souza', service: 'Corte Masculino', professionals: ['2'], date: '2025-10-15', time: '15:00', status: 'confirmed' },
+  { id: '3', client: 'Beatriz Lima', service: 'Manicure', professionals: ['3'], date: '2025-10-15', time: '16:00', status: 'completed' },
+  { id: '4', client: 'Diego Alves', service: 'Massagem', professionals: ['4', '1'], date: '2025-10-16', time: '10:00', status: 'cancelled' },
 ];
 
 export default function Appointments() {
@@ -67,7 +74,27 @@ export default function Appointments() {
   const columns = [
     { key: 'client', header: 'Cliente' },
     { key: 'service', header: 'Serviço' },
-    { key: 'professional', header: 'Profissional' },
+    {
+      key: 'professionals',
+      header: 'Profissionais',
+      render: (appointment: Appointment) => {
+        const professionalNames = appointment.professionals
+          .map((id) => mockProfessionals.find((p) => p.id === id)?.name)
+          .filter(Boolean);
+        
+        if (professionalNames.length === 0) return '-';
+        if (professionalNames.length === 1) return professionalNames[0];
+        
+        return (
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="secondary">{professionalNames[0]}</Badge>
+            {professionalNames.length > 1 && (
+              <Badge variant="outline">+{professionalNames.length - 1}</Badge>
+            )}
+          </div>
+        );
+      },
+    },
     {
       key: 'date',
       header: 'Data',

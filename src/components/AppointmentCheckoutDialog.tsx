@@ -60,7 +60,7 @@ interface Appointment {
   id: string;
   client: string;
   service: string;
-  professional: string;
+  professionals: string[];
   date: string;
   time: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';

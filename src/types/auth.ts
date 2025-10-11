@@ -4,6 +4,7 @@ export type Screen =
   | 'dashboard'
   | 'users'
   | 'services'
+  | 'professionals'
   | 'items'
   | 'appointments'
   | 'item-prices'
