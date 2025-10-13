@@ -15,6 +15,7 @@ const Services = lazy(() => import("./pages/Services"));
 const Professionals = lazy(() => import("./pages/Professionals"));
 const Items = lazy(() => import("./pages/Items"));
 const Appointments = lazy(() => import("./pages/Appointments"));
+const Cashier = lazy(() => import("./pages/Cashier"));
 const ItemPrices = lazy(() => import("./pages/ItemPrices"));
 const ItemPriceHistories = lazy(() => import("./pages/ItemPriceHistories"));
 const Promotions = lazy(() => import("./pages/Promotions"));
@@ -109,6 +110,16 @@ const App = () => (
                 <ProtectedRoute screen="appointments">
                   <SidebarLayout>
                     <Appointments />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cashier"
+              element={
+                <ProtectedRoute screen="cashier">
+                  <SidebarLayout>
+                    <Cashier />
                   </SidebarLayout>
                 </ProtectedRoute>
               }

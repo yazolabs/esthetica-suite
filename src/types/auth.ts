@@ -7,6 +7,7 @@ export type Screen =
   | 'professionals'
   | 'items'
   | 'appointments'
+  | 'cashier'
   | 'item-prices'
   | 'item-price-histories'
   | 'promotions'
