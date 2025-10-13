@@ -4,6 +4,7 @@ import { Role, Permission, Action, Screen } from '@/types/auth';
 export const rolePermissions: Record<Role, Permission[]> = {
   admin: [
     { screen: 'dashboard', actions: ['view'] },
+    { screen: 'customers', actions: ['view', 'create', 'edit', 'delete'] },
     { screen: 'users', actions: ['view', 'create', 'edit', 'delete'] },
     { screen: 'services', actions: ['view', 'create', 'edit', 'delete'] },
     { screen: 'professionals', actions: ['view', 'create', 'edit', 'delete'] },
@@ -15,6 +16,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
   ],
   manager: [
     { screen: 'dashboard', actions: ['view'] },
+    { screen: 'customers', actions: ['view', 'create', 'edit'] },
     { screen: 'services', actions: ['view', 'create', 'edit'] },
     { screen: 'professionals', actions: ['view', 'create', 'edit'] },
     { screen: 'items', actions: ['view', 'create', 'edit'] },
@@ -25,12 +27,14 @@ export const rolePermissions: Record<Role, Permission[]> = {
   ],
   professional: [
     { screen: 'dashboard', actions: ['view'] },
+    { screen: 'customers', actions: ['view'] },
     { screen: 'services', actions: ['view'] },
     { screen: 'professionals', actions: ['view'] },
     { screen: 'appointments', actions: ['view', 'edit'] },
   ],
   receptionist: [
     { screen: 'dashboard', actions: ['view'] },
+    { screen: 'customers', actions: ['view', 'create', 'edit'] },
     { screen: 'appointments', actions: ['view', 'create', 'edit'] },
     { screen: 'services', actions: ['view'] },
     { screen: 'professionals', actions: ['view'] },

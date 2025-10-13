@@ -9,7 +9,8 @@ export type Screen =
   | 'appointments'
   | 'item-prices'
   | 'item-price-histories'
-  | 'promotions';
+  | 'promotions'
+  | 'customers';
 
 export type Action = 'view' | 'create' | 'edit' | 'delete';
 

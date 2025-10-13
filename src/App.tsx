@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Customers = lazy(() => import("./pages/Customers"));
 const Users = lazy(() => import("./pages/Users"));
 const Services = lazy(() => import("./pages/Services"));
 const Professionals = lazy(() => import("./pages/Professionals"));
@@ -48,6 +49,16 @@ const App = () => (
                 <ProtectedRoute screen="dashboard">
                   <SidebarLayout>
                     <Dashboard />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute screen="customers">
+                  <SidebarLayout>
+                    <Customers />
                   </SidebarLayout>
                 </ProtectedRoute>
               }

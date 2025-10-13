@@ -10,6 +10,7 @@ import {
   History,
   LogOut,
   Megaphone,
+  UserCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -37,6 +38,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, screen: 'dashboard' },
+  { title: 'Clientes', url: '/customers', icon: UserCircle, screen: 'customers' },
   { title: 'Usuários', url: '/users', icon: Users, screen: 'users' },
   { title: 'Serviços', url: '/services', icon: Scissors, screen: 'services' },
   { title: 'Profissionais', url: '/professionals', icon: UserCog, screen: 'professionals' },
