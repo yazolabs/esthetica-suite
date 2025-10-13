@@ -8,7 +8,8 @@ export type Screen =
   | 'items'
   | 'appointments'
   | 'item-prices'
-  | 'item-price-histories';
+  | 'item-price-histories'
+  | 'promotions';
 
 export type Action = 'view' | 'create' | 'edit' | 'delete';
 

@@ -9,6 +9,7 @@ import {
   DollarSign,
   History,
   LogOut,
+  Megaphone,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { title: 'Agendamentos', url: '/appointments', icon: Calendar, screen: 'appointments' },
   { title: 'Preços', url: '/item-prices', icon: DollarSign, screen: 'item-prices' },
   { title: 'Histórico de Preços', url: '/item-price-histories', icon: History, screen: 'item-price-histories' },
+  { title: 'Promoções e Campanhas', url: '/promotions', icon: Megaphone, screen: 'promotions' },
 ];
 
 export function AppSidebar() {

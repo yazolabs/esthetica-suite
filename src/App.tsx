@@ -16,6 +16,7 @@ const Items = lazy(() => import("./pages/Items"));
 const Appointments = lazy(() => import("./pages/Appointments"));
 const ItemPrices = lazy(() => import("./pages/ItemPrices"));
 const ItemPriceHistories = lazy(() => import("./pages/ItemPriceHistories"));
+const Promotions = lazy(() => import("./pages/Promotions"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -117,6 +118,16 @@ const App = () => (
                 <ProtectedRoute screen="item-price-histories">
                   <SidebarLayout>
                     <ItemPriceHistories />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/promotions"
+              element={
+                <ProtectedRoute screen="promotions">
+                  <SidebarLayout>
+                    <Promotions />
                   </SidebarLayout>
                 </ProtectedRoute>
               }
