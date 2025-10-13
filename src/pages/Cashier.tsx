@@ -88,6 +88,29 @@ const mockTransactions: Transaction[] = [
 export default function Cashier() {
   const [period, setPeriod] = useState<Period>('day');
   const [selectedDate] = useState(new Date());
+  const [selectedService, setSelectedService] = useState<string>('all');
+  const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
+  const [selectedItem, setSelectedItem] = useState<string>('all');
+
+  // Extract unique values for filters
+  const uniqueServices = useMemo(() => {
+    const services = new Set(mockTransactions.map(t => t.service));
+    return Array.from(services).sort();
+  }, []);
+
+  const uniqueProfessionals = useMemo(() => {
+    const professionals = new Set(mockTransactions.map(t => t.professional));
+    return Array.from(professionals).sort();
+  }, []);
+
+  const uniqueItems = useMemo(() => {
+    const items = new Set(
+      mockTransactions.flatMap(t => 
+        t.items.split(',').map(item => item.trim()).filter(item => item && item !== '-')
+      )
+    );
+    return Array.from(items).sort();
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     const now = new Date();
@@ -101,19 +124,33 @@ export default function Cashier() {
         transactionDate.getDate()
       );
 
+      // Period filter
+      let periodMatch = false;
       if (period === 'day') {
-        return transactionDay.getTime() === today.getTime();
+        periodMatch = transactionDay.getTime() === today.getTime();
       } else if (period === 'week') {
         const weekAgo = new Date(today);
         weekAgo.setDate(weekAgo.getDate() - 7);
-        return transactionDate >= weekAgo;
+        periodMatch = transactionDate >= weekAgo;
       } else {
         const monthAgo = new Date(today);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return transactionDate >= monthAgo;
+        periodMatch = transactionDate >= monthAgo;
       }
+
+      // Service filter
+      const serviceMatch = selectedService === 'all' || transaction.service === selectedService;
+
+      // Professional filter
+      const professionalMatch = selectedProfessional === 'all' || transaction.professional === selectedProfessional;
+
+      // Item filter
+      const itemMatch = selectedItem === 'all' || 
+        transaction.items.split(',').map(i => i.trim()).includes(selectedItem);
+
+      return periodMatch && serviceMatch && professionalMatch && itemMatch;
     });
-  }, [period]);
+  }, [period, selectedService, selectedProfessional, selectedItem]);
 
   const summary = useMemo(() => {
     const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -266,16 +303,6 @@ export default function Cashier() {
           <p className="text-muted-foreground">Gestão financeira e relatórios</p>
         </div>
         <div className="flex gap-2">
-          <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Hoje</SelectItem>
-              <SelectItem value="week">Última Semana</SelectItem>
-              <SelectItem value="month">Último Mês</SelectItem>
-            </SelectContent>
-          </Select>
           <Button variant="outline" onClick={exportToPDF}>
             <FileText className="h-4 w-4 mr-2" />
             Exportar PDF
@@ -286,6 +313,82 @@ export default function Cashier() {
           </Button>
         </div>
       </div>
+
+      {/* Filters Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Refine os resultados por período e outros critérios</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Período</label>
+              <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Hoje</SelectItem>
+                  <SelectItem value="week">Última Semana</SelectItem>
+                  <SelectItem value="month">Último Mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Serviço</label>
+              <Select value={selectedService} onValueChange={setSelectedService}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Serviços</SelectItem>
+                  {uniqueServices.map((service) => (
+                    <SelectItem key={service} value={service}>
+                      {service}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Profissional</label>
+              <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Profissionais</SelectItem>
+                  {uniqueProfessionals.map((professional) => (
+                    <SelectItem key={professional} value={professional}>
+                      {professional}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Item</label>
+              <Select value={selectedItem} onValueChange={setSelectedItem}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Itens</SelectItem>
+                  {uniqueItems.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
