@@ -91,6 +91,7 @@ export default function Cashier() {
   const [selectedService, setSelectedService] = useState<string>('all');
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<string>('all');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
 
   // Extract unique values for filters
   const uniqueServices = useMemo(() => {
@@ -110,6 +111,11 @@ export default function Cashier() {
       )
     );
     return Array.from(items).sort();
+  }, []);
+
+  const uniquePaymentMethods = useMemo(() => {
+    const methods = new Set(mockTransactions.map(t => t.paymentMethod));
+    return Array.from(methods).sort();
   }, []);
 
   const filteredTransactions = useMemo(() => {
@@ -148,9 +154,12 @@ export default function Cashier() {
       const itemMatch = selectedItem === 'all' || 
         transaction.items.split(',').map(i => i.trim()).includes(selectedItem);
 
-      return periodMatch && serviceMatch && professionalMatch && itemMatch;
+      // Payment method filter
+      const paymentMatch = selectedPaymentMethod === 'all' || transaction.paymentMethod === selectedPaymentMethod;
+
+      return periodMatch && serviceMatch && professionalMatch && itemMatch && paymentMatch;
     });
-  }, [period, selectedService, selectedProfessional, selectedItem]);
+  }, [period, selectedService, selectedProfessional, selectedItem, selectedPaymentMethod]);
 
   const summary = useMemo(() => {
     const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -321,7 +330,7 @@ export default function Cashier() {
           <CardDescription>Refine os resultados por período e outros critérios</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <label className="text-sm font-medium">Período</label>
               <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
@@ -381,6 +390,23 @@ export default function Cashier() {
                   {uniqueItems.map((item) => (
                     <SelectItem key={item} value={item}>
                       {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Forma de Pagamento</label>
+              <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Formas</SelectItem>
+                  {uniquePaymentMethods.map((method) => (
+                    <SelectItem key={method} value={method}>
+                      {method}
                     </SelectItem>
                   ))}
                 </SelectContent>
