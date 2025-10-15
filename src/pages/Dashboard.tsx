@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, Scissors, TrendingUp, Clock } from 'lucide-react';
+import { Users, Calendar, Scissors, TrendingUp, Clock, Tag, Megaphone, TrendingDown, Target } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
@@ -82,6 +82,65 @@ const mockAppointments: Appointment[] = [
   { id: '5', professionalId: '3', clientName: 'Eduardo Mendes', service: 'Pedicure', time: '14:00', status: 'scheduled' },
 ];
 
+interface Promotion {
+  id: string;
+  name: string;
+  type: 'discount' | 'package' | 'loyalty';
+  discount: number;
+  usage: number;
+  target: number;
+  revenue: number;
+  status: 'active' | 'scheduled' | 'expired';
+  endDate: string;
+}
+
+const mockPromotions: Promotion[] = [
+  { 
+    id: '1', 
+    name: 'Desconto Quinta Premium', 
+    type: 'discount', 
+    discount: 20, 
+    usage: 45, 
+    target: 100, 
+    revenue: 3240,
+    status: 'active',
+    endDate: '2025-10-31'
+  },
+  { 
+    id: '2', 
+    name: 'Pacote Noivas', 
+    type: 'package', 
+    discount: 15, 
+    usage: 12, 
+    target: 20, 
+    revenue: 5800,
+    status: 'active',
+    endDate: '2025-12-31'
+  },
+  { 
+    id: '3', 
+    name: 'Cliente Fidelidade', 
+    type: 'loyalty', 
+    discount: 10, 
+    usage: 78, 
+    target: 50, 
+    revenue: 2340,
+    status: 'active',
+    endDate: '2025-12-31'
+  },
+  { 
+    id: '4', 
+    name: 'Black Friday 2024', 
+    type: 'discount', 
+    discount: 50, 
+    usage: 156, 
+    target: 150, 
+    revenue: 12400,
+    status: 'expired',
+    endDate: '2024-11-29'
+  },
+];
+
 export default function Dashboard() {
   const { user } = useAuthUser();
   const [selectedDate] = useState(new Date());
@@ -132,6 +191,13 @@ export default function Dashboard() {
     }
   };
 
+  const activePromotions = mockPromotions.filter(p => p.status === 'active');
+  const totalPromotionRevenue = activePromotions.reduce((sum, p) => sum + p.revenue, 0);
+  const totalPromotionUsage = activePromotions.reduce((sum, p) => sum + p.usage, 0);
+  const averageConversion = activePromotions.length > 0 
+    ? (activePromotions.reduce((sum, p) => sum + (p.usage / p.target * 100), 0) / activePromotions.length).toFixed(1)
+    : 0;
+
   const stats = [
     {
       title: 'Total de Clientes',
@@ -162,6 +228,55 @@ export default function Dashboard() {
       color: 'text-warning',
     },
   ];
+
+  const promotionStats = [
+    {
+      title: 'Promoções Ativas',
+      value: activePromotions.length.toString(),
+      description: `${mockPromotions.filter(p => p.status === 'scheduled').length} agendadas`,
+      icon: Tag,
+      color: 'text-success',
+    },
+    {
+      title: 'Uso Total',
+      value: totalPromotionUsage.toString(),
+      description: 'Clientes atingidos este mês',
+      icon: Target,
+      color: 'text-primary',
+    },
+    {
+      title: 'Receita Promoções',
+      value: `R$ ${(totalPromotionRevenue / 1000).toFixed(1)}k`,
+      description: `${activePromotions.length} campanhas gerando receita`,
+      icon: TrendingUp,
+      color: 'text-warning',
+    },
+    {
+      title: 'Taxa de Conversão',
+      value: `${averageConversion}%`,
+      description: 'Média de atingimento das metas',
+      icon: Megaphone,
+      color: 'text-secondary',
+    },
+  ];
+
+  const getPromotionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'discount': return 'Desconto';
+      case 'package': return 'Pacote';
+      case 'loyalty': return 'Fidelidade';
+      default: return type;
+    }
+  };
+
+  const getPromotionTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'discount': return 'default';
+      case 'package': return 'secondary';
+      case 'loyalty': return 'outline';
+      default: return 'default';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -273,6 +388,174 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Indicadores de Promoções e Campanhas */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight mb-4">Promoções e Campanhas</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          {promotionStats.map((stat) => (
+            <Card key={stat.title} className="shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              Campanhas Ativas
+            </CardTitle>
+            <CardDescription>
+              Promoções em andamento e seu desempenho
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {activePromotions.map((promo) => (
+                <div key={promo.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-sm">{promo.name}</h4>
+                      <div className="flex gap-2">
+                        <Badge variant={getPromotionTypeBadgeVariant(promo.type)} className="text-xs">
+                          {getPromotionTypeLabel(promo.type)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {promo.discount}% OFF
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-success">
+                        R$ {promo.revenue.toLocaleString('pt-BR')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Até {new Date(promo.endDate).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-medium">
+                        {promo.usage} / {promo.target} usos
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          promo.usage >= promo.target 
+                            ? 'bg-success' 
+                            : promo.usage >= promo.target * 0.7 
+                            ? 'bg-warning' 
+                            : 'bg-primary'
+                        }`}
+                        style={{ width: `${Math.min((promo.usage / promo.target) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {activePromotions.length === 0 && (
+                <p className="text-sm text-muted-foreground italic text-center py-8">
+                  Nenhuma promoção ativa no momento
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              Performance das Campanhas
+            </CardTitle>
+            <CardDescription>
+              Análise de resultados e conversão
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {mockPromotions
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 4)
+                .map((promo) => {
+                  const conversion = (promo.usage / promo.target) * 100;
+                  const isGood = conversion >= 70;
+                  const isMedium = conversion >= 40 && conversion < 70;
+                  
+                  return (
+                    <div key={promo.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{promo.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge 
+                              variant={promo.status === 'active' ? 'default' : 'outline'} 
+                              className="text-xs"
+                            >
+                              {promo.status === 'active' ? 'Ativa' : 'Encerrada'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {isGood ? (
+                                <span className="flex items-center gap-1 text-success">
+                                  <TrendingUp className="h-3 w-3" />
+                                  Excelente
+                                </span>
+                              ) : isMedium ? (
+                                <span className="flex items-center gap-1 text-warning">
+                                  <Target className="h-3 w-3" />
+                                  Regular
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-destructive">
+                                  <TrendingDown className="h-3 w-3" />
+                                  Baixa
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            R$ {(promo.revenue / 1000).toFixed(1)}k
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {conversion.toFixed(0)}% conversão
+                          </p>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${
+                            isGood ? 'bg-success' : isMedium ? 'bg-warning' : 'bg-destructive'
+                          }`}
+                          style={{ width: `${Math.min(conversion, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-md">
