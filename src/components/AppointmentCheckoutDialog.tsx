@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -59,11 +59,15 @@ interface Product {
 interface Appointment {
   id: string;
   client: string;
+  clientPhone?: string;
   service: string;
   professionals: string[];
   date: string;
   time: string;
+  duration?: number;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+  price?: number;
 }
 
 interface AppointmentCheckoutDialogProps {
@@ -114,6 +118,35 @@ export function AppointmentCheckoutDialog({
       paymentMethod: '',
     },
   });
+
+  // Pré-preencher serviços e valores quando o dialog abrir com um appointment
+  useEffect(() => {
+    if (open && appointment) {
+      // Encontrar o serviço correspondente
+      const service = mockServices.find(s => s.name === appointment.service);
+      
+      if (service) {
+        // Adicionar o serviço do agendamento automaticamente
+        const prefilledService: ServiceItem = {
+          id: service.id,
+          name: service.name,
+          price: appointment.price || service.price,
+          professionals: appointment.professionals,
+        };
+        
+        setServices([prefilledService]);
+      }
+      
+      // Limpar produtos
+      setProducts([]);
+      
+      // Reset form
+      form.reset({
+        discount: 0,
+        paymentMethod: '',
+      });
+    }
+  }, [open, appointment, form]);
 
   const addService = () => {
     if (!selectedService || selectedProfessionals.length === 0) {
