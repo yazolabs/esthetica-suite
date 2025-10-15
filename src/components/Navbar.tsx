@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useSidebar } from '@/components/ui/sidebar';
+import logo from '@/assets/logo.jpeg';
 
 export function Navbar() {
   const { user } = useAuthUser();
@@ -19,9 +20,11 @@ export function Navbar() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Salão de Beleza
-          </h1>
+          <img 
+            src={logo} 
+            alt="Studio Unhas Delicadas" 
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         <div className="flex items-center gap-4">
