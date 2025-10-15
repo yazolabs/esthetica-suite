@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useToast } from '@/hooks/use-toast';
-import { Scissors } from 'lucide-react';
+import logo from '@/assets/logo.jpeg';
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Username deve ter no mínimo 3 caracteres'),
@@ -64,10 +64,13 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-primary p-4">
       <Card className="w-full max-w-md shadow-primary">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Scissors className="h-8 w-8 text-primary" />
+          <div className="mx-auto flex items-center justify-center">
+            <img 
+              src={logo} 
+              alt="Studio Unhas Delicadas" 
+              className="h-24 w-auto object-contain"
+            />
           </div>
-          <CardTitle className="text-3xl font-bold">Salão de Beleza</CardTitle>
           <CardDescription>
             Entre com suas credenciais para acessar o sistema
           </CardDescription>
