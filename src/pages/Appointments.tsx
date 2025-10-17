@@ -343,73 +343,44 @@ export default function Appointments() {
               box-sizing: border-box;
             }
             
-            @page {
-              margin: 1cm;
-              size: A4;
-            }
-            
             body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              padding: 30px;
+              font-family: Arial, sans-serif;
+              padding: 20px;
               max-width: 800px;
               margin: 0 auto;
               line-height: 1.6;
-              background-color: white;
-              color: #333;
             }
             
             .header {
               text-align: center;
-              margin-bottom: 40px;
-              padding: 25px;
-              background: linear-gradient(135deg, #e63888 0%, #c8286e 100%);
-              border-radius: 12px;
-              box-shadow: 0 4px 12px rgba(230, 56, 136, 0.2);
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 3px solid #e63888;
             }
             
             .header h1 {
-              color: white;
-              font-size: 32px;
-              margin-bottom: 8px;
-              text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-              letter-spacing: 1px;
+              color: #e63888;
+              font-size: 28px;
+              margin-bottom: 10px;
             }
             
-            .header .subtitle {
-              color: rgba(255,255,255,0.95);
-              font-size: 16px;
-              margin-bottom: 15px;
-            }
-
-            .header .document-type {
-              display: inline-block;
-              background-color: white;
-              color: #e63888;
-              padding: 8px 20px;
-              border-radius: 20px;
+            .header p {
+              color: #666;
               font-size: 14px;
-              font-weight: 700;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-              margin-top: 10px;
             }
             
             .section {
-              margin-bottom: 30px;
-              page-break-inside: avoid;
+              margin-bottom: 25px;
             }
             
             .section-title {
-              background: linear-gradient(135deg, #e63888 0%, #c8286e 100%);
+              background-color: #e63888;
               color: white;
-              padding: 12px 18px;
+              padding: 8px 12px;
               font-size: 16px;
-              font-weight: 700;
-              margin-bottom: 15px;
-              border-radius: 8px;
-              box-shadow: 0 2px 8px rgba(230, 56, 136, 0.15);
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
+              font-weight: bold;
+              margin-bottom: 12px;
+              border-radius: 4px;
             }
             
             .info-grid {
@@ -420,28 +391,24 @@ export default function Appointments() {
             }
             
             .info-item {
-              padding: 15px;
-              background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-              border-left: 4px solid #e63888;
-              border-radius: 8px;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-              transition: transform 0.2s;
+              padding: 10px;
+              background-color: #f8f9fa;
+              border-left: 3px solid #e63888;
+              border-radius: 4px;
             }
             
             .info-label {
-              font-size: 11px;
+              font-size: 12px;
               color: #666;
               text-transform: uppercase;
-              margin-bottom: 6px;
-              font-weight: 700;
-              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+              font-weight: 600;
             }
             
             .info-value {
               font-size: 16px;
-              color: #1a1a1a;
-              font-weight: 600;
-              word-wrap: break-word;
+              color: #333;
+              font-weight: 500;
             }
             
             .full-width {
@@ -450,145 +417,95 @@ export default function Appointments() {
             
             .status-badge {
               display: inline-block;
-              padding: 6px 16px;
-              border-radius: 20px;
-              font-size: 13px;
-              font-weight: 700;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 14px;
+              font-weight: 600;
             }
             
             .status-scheduled {
               background-color: #fef3c7;
               color: #92400e;
-              border: 2px solid #fbbf24;
             }
             
             .status-confirmed {
               background-color: #dbeafe;
               color: #1e40af;
-              border: 2px solid #3b82f6;
             }
             
             .status-completed {
               background-color: #d1fae5;
               color: #065f46;
-              border: 2px solid #10b981;
             }
             
             .status-cancelled {
               background-color: #fee2e2;
               color: #991b1b;
-              border: 2px solid #ef4444;
             }
             
             .footer {
-              margin-top: 50px;
-              padding-top: 25px;
-              border-top: 3px dashed #e0e0e0;
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px dashed #ccc;
               text-align: center;
               color: #666;
               font-size: 12px;
             }
-
-            .footer p {
-              margin: 5px 0;
-            }
-
-            .footer strong {
-              color: #e63888;
-              font-size: 14px;
-            }
             
-            .price-box {
-              background: linear-gradient(135deg, #fff5f9 0%, #ffe6f0 100%);
-              border: 3px solid #e63888;
-              border-radius: 12px;
-              padding: 25px;
-              text-align: center;
-              box-shadow: 0 4px 12px rgba(230, 56, 136, 0.15);
-            }
-
-            .price-label {
-              font-size: 14px;
-              color: #666;
-              text-transform: uppercase;
-              margin-bottom: 10px;
-              font-weight: 700;
-              letter-spacing: 1px;
-            }
-
             .price-highlight {
-              font-size: 42px;
+              font-size: 24px;
               color: #e63888;
-              font-weight: 900;
-              text-shadow: 2px 2px 4px rgba(230, 56, 136, 0.1);
-              letter-spacing: -1px;
+              font-weight: bold;
             }
             
             .notes-box {
-              background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-              border: 2px solid #fbbf24;
-              border-left: 6px solid #f59e0b;
-              padding: 18px;
-              border-radius: 8px;
+              background-color: #fffbeb;
+              border: 1px solid #fbbf24;
+              padding: 12px;
+              border-radius: 4px;
               font-size: 14px;
               color: #78350f;
-              box-shadow: 0 2px 6px rgba(251, 191, 36, 0.1);
-              line-height: 1.6;
-            }
-
-            .divider {
-              height: 2px;
-              background: linear-gradient(to right, transparent, #e63888, transparent);
-              margin: 25px 0;
             }
             
             @media print {
               body {
-                padding: 0;
+                padding: 10px;
               }
               
               .no-print {
                 display: none;
-              }
-
-              .section {
-                page-break-inside: avoid;
               }
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>Studio Unhas Delicadas</h1>
-            <p class="subtitle">Michele Fonseca e Equipe</p>
-            <div class="document-type">Comanda de Atendimento</div>
+            <h1>🌸 Studio Unhas Delicadas 🌸</h1>
+            <p>Michele Fonseca e Equipe</p>
+            <p style="margin-top: 10px; font-size: 16px; font-weight: 600;">COMANDA DE ATENDIMENTO</p>
           </div>
 
           <div class="section">
-            <div class="section-title">📋 Informações do Cliente</div>
+            <div class="section-title">Informações do Cliente</div>
             <div class="info-grid">
               <div class="info-item">
-                <div class="info-label">Nome do Cliente</div>
+                <div class="info-label">Cliente</div>
                 <div class="info-value">${appointment.client}</div>
               </div>
               ${appointment.clientPhone ? `
                 <div class="info-item">
-                  <div class="info-label">Telefone de Contato</div>
+                  <div class="info-label">Telefone</div>
                   <div class="info-value">${appointment.clientPhone}</div>
                 </div>
               ` : ''}
             </div>
           </div>
 
-          <div class="divider"></div>
-
           <div class="section">
-            <div class="section-title">📅 Detalhes do Agendamento</div>
+            <div class="section-title">Detalhes do Agendamento</div>
             <div class="info-grid">
               <div class="info-item">
-                <div class="info-label">Data do Atendimento</div>
+                <div class="info-label">Data</div>
                 <div class="info-value">${formattedDate}</div>
               </div>
               <div class="info-item">
@@ -597,12 +514,12 @@ export default function Appointments() {
               </div>
               ${appointment.duration ? `
                 <div class="info-item">
-                  <div class="info-label">Duração Estimada</div>
+                  <div class="info-label">Duração</div>
                   <div class="info-value">${appointment.duration} minutos</div>
                 </div>
               ` : ''}
               <div class="info-item">
-                <div class="info-label">Status do Agendamento</div>
+                <div class="info-label">Status</div>
                 <div class="info-value">
                   <span class="status-badge status-${appointment.status}">
                     ${getStatusLabel(appointment.status)}
@@ -612,47 +529,43 @@ export default function Appointments() {
             </div>
           </div>
 
-          <div class="divider"></div>
-
           <div class="section">
-            <div class="section-title">✨ Serviço e Profissionais</div>
+            <div class="section-title">Serviços e Profissionais</div>
             <div class="info-grid">
               <div class="info-item full-width">
-                <div class="info-label">Serviço Realizado</div>
+                <div class="info-label">Serviço</div>
                 <div class="info-value">${appointment.service}</div>
               </div>
               <div class="info-item full-width">
-                <div class="info-label">Profissional(is) Responsável(is)</div>
+                <div class="info-label">Profissional(is)</div>
                 <div class="info-value">${professionalNames || 'Não especificado'}</div>
               </div>
             </div>
           </div>
 
           ${appointment.price ? `
-            <div class="divider"></div>
             <div class="section">
-              <div class="section-title">💰 Valores</div>
-              <div class="price-box">
-                <div class="price-label">Valor Total do Atendimento</div>
+              <div class="section-title">Valores</div>
+              <div class="info-item" style="text-align: center; padding: 20px;">
+                <div class="info-label">Valor Total</div>
                 <div class="price-highlight">R$ ${appointment.price.toFixed(2)}</div>
               </div>
             </div>
           ` : ''}
 
           ${appointment.notes ? `
-            <div class="divider"></div>
             <div class="section">
-              <div class="section-title">📝 Observações</div>
+              <div class="section-title">Observações</div>
               <div class="notes-box">
-                <strong>Observação:</strong> ${appointment.notes}
+                ${appointment.notes}
               </div>
             </div>
           ` : ''}
 
           <div class="footer">
             <p><strong>Studio Unhas Delicadas - Michele Fonseca e Equipe</strong></p>
-            <p>Comanda gerada em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p style="margin-top: 15px; font-size: 14px; color: #e63888;">✨ Obrigada pela preferência! Volte sempre! 💅 ✨</p>
+            <p>Comanda impressa em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            <p style="margin-top: 10px;">Obrigado pela preferência! 💅</p>
           </div>
         </body>
       </html>
