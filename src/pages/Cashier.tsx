@@ -103,9 +103,43 @@ const mockTransactions: Transaction[] = [
     paymentMethod: 'PIX',
     amount: 45.00,
   },
-  // SAÍDAS - Despesas de contas a pagar
+  // SAÍDAS - Comissões de profissionais (contas a pagar)
   {
     id: '6',
+    type: 'saida',
+    date: '2025-10-17 09:30',
+    description: 'Comissão - Corte Feminino',
+    supplier: 'João Santos',
+    category: 'Comissão',
+    items: 'Comissão por serviço',
+    paymentMethod: 'PIX',
+    amount: 24.00,
+  },
+  {
+    id: '7',
+    type: 'saida',
+    date: '2025-10-17 10:45',
+    description: 'Comissão - Coloração',
+    supplier: 'Pedro Lima',
+    category: 'Comissão',
+    items: 'Comissão por serviço',
+    paymentMethod: 'PIX',
+    amount: 84.00,
+  },
+  {
+    id: '8',
+    type: 'saida',
+    date: '2025-10-17 14:15',
+    description: 'Comissão - Corte Masculino',
+    supplier: 'João Santos',
+    category: 'Comissão',
+    items: 'Comissão por serviço',
+    paymentMethod: 'Dinheiro',
+    amount: 15.00,
+  },
+  // SAÍDAS - Outras despesas de contas a pagar
+  {
+    id: '9',
     type: 'saida',
     date: '2025-10-17 08:00',
     description: 'Compra de Produtos',
@@ -116,7 +150,7 @@ const mockTransactions: Transaction[] = [
     amount: 450.00,
   },
   {
-    id: '7',
+    id: '10',
     type: 'saida',
     date: '2025-10-15 09:00',
     description: 'Aluguel do Salão',
@@ -127,7 +161,7 @@ const mockTransactions: Transaction[] = [
     amount: 2500.00,
   },
   {
-    id: '8',
+    id: '11',
     type: 'saida',
     date: '2025-10-14 16:00',
     description: 'Conta de Energia',
@@ -138,7 +172,7 @@ const mockTransactions: Transaction[] = [
     amount: 380.00,
   },
   {
-    id: '9',
+    id: '12',
     type: 'saida',
     date: '2025-10-13 10:00',
     description: 'Material de Limpeza',
@@ -149,7 +183,7 @@ const mockTransactions: Transaction[] = [
     amount: 150.00,
   },
   {
-    id: '10',
+    id: '13',
     type: 'saida',
     date: '2025-10-12 14:00',
     description: 'Manutenção de Equipamentos',

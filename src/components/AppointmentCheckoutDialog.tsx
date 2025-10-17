@@ -87,12 +87,12 @@ const mockProfessionals: Professional[] = [
 ];
 
 const mockServices = [
-  { id: '1', name: 'Corte Feminino', price: 80 },
-  { id: '2', name: 'Corte Masculino', price: 50 },
-  { id: '3', name: 'Manicure', price: 40 },
-  { id: '4', name: 'Pedicure', price: 45 },
-  { id: '5', name: 'Massagem', price: 120 },
-  { id: '6', name: 'Escova', price: 60 },
+  { id: '1', name: 'Corte Feminino', price: 80, commissionType: 'percentage' as const, commissionValue: 30 },
+  { id: '2', name: 'Corte Masculino', price: 50, commissionType: 'percentage' as const, commissionValue: 30 },
+  { id: '3', name: 'Manicure', price: 40, commissionType: 'percentage' as const, commissionValue: 25 },
+  { id: '4', name: 'Pedicure', price: 45, commissionType: 'percentage' as const, commissionValue: 25 },
+  { id: '5', name: 'Massagem', price: 120, commissionType: 'fixed' as const, commissionValue: 40 },
+  { id: '6', name: 'Escova', price: 60, commissionType: 'percentage' as const, commissionValue: 30 },
 ];
 
 const mockProducts = [
@@ -666,6 +666,60 @@ export function AppointmentCheckoutDialog({
       return;
     }
 
+    // Calcular comissões para cada profissional
+    const commissions: Array<{
+      professionalId: string;
+      professionalName: string;
+      serviceName: string;
+      servicePrice: number;
+      commissionAmount: number;
+    }> = [];
+
+    services.forEach((service) => {
+      const serviceData = mockServices.find(s => s.id === service.id);
+      
+      service.professionals.forEach((professionalId) => {
+        const professional = mockProfessionals.find(p => p.id === professionalId);
+        
+        if (serviceData && professional) {
+          let commissionAmount = 0;
+          
+          // Calcular comissão baseado no tipo
+          if (serviceData.commissionType === 'percentage') {
+            commissionAmount = (service.price * serviceData.commissionValue) / 100;
+          } else {
+            commissionAmount = serviceData.commissionValue;
+          }
+          
+          // Dividir comissão se houver múltiplos profissionais no serviço
+          const professionalCount = service.professionals.length;
+          commissionAmount = commissionAmount / professionalCount;
+          
+          commissions.push({
+            professionalId,
+            professionalName: professional.name,
+            serviceName: service.name,
+            servicePrice: service.price,
+            commissionAmount,
+          });
+        }
+      });
+    });
+
+    // Criar contas a pagar para as comissões
+    // Em uma aplicação real, isso seria uma chamada à API
+    const accountsPayable = commissions.map((commission, index) => ({
+      id: `commission-${Date.now()}-${index}`,
+      description: `Comissão - ${commission.serviceName}`,
+      supplier: commission.professionalName,
+      category: 'Comissão',
+      dueDate: new Date().toISOString().split('T')[0],
+      amount: commission.commissionAmount,
+      status: 'pending' as const,
+      paymentMethod: null,
+      notes: `Cliente: ${appointment?.client}\nServiço: ${commission.serviceName}\nValor do Serviço: R$ ${commission.servicePrice.toFixed(2)}`,
+    }));
+
     console.log('Checkout:', {
       appointment,
       services,
@@ -673,9 +727,20 @@ export function AppointmentCheckoutDialog({
       ...data,
       subtotal,
       total,
+      commissions,
+      accountsPayable,
     });
 
-    toast.success('Atendimento finalizado com sucesso!');
+    // Exibir resumo das comissões
+    const totalCommissions = commissions.reduce((sum, c) => sum + c.commissionAmount, 0);
+    
+    toast.success(
+      `Atendimento finalizado com sucesso!\n` +
+      `Total: R$ ${total.toFixed(2)}\n` +
+      `Comissões geradas: R$ ${totalCommissions.toFixed(2)} (${commissions.length} conta${commissions.length > 1 ? 's' : ''} a pagar)`,
+      { duration: 5000 }
+    );
+    
     onOpenChange(false);
     
     // Reset form
