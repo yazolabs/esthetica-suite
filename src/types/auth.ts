@@ -13,7 +13,8 @@ export type Screen =
   | 'promotions'
   | 'customers'
   | 'suppliers'
-  | 'accounts-payable';
+  | 'accounts-payable'
+  | 'commissions';
 
 export type Action = 'view' | 'create' | 'edit' | 'delete';
 

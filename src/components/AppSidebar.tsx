@@ -14,6 +14,7 @@ import {
   Wallet,
   Store,
   FileText,
+  Percent,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -75,6 +76,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Fornecedores', url: '/suppliers', icon: Store, screen: 'suppliers' },
       { title: 'Contas a Pagar', url: '/accounts-payable', icon: FileText, screen: 'accounts-payable' },
+      { title: 'Comissões', url: '/commissions', icon: Percent, screen: 'commissions' },
     ],
   },
   {
