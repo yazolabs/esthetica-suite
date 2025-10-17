@@ -35,6 +35,9 @@ import { toast } from 'sonner';
 const checkoutSchema = z.object({
   discount: z.number().min(0).max(100),
   paymentMethod: z.string().min(1, 'Forma de pagamento é obrigatória'),
+  cardBrand: z.string().optional(),
+  installments: z.number().min(1).optional(),
+  installmentFee: z.number().min(0).optional(),
 });
 
 interface Professional {
@@ -116,6 +119,9 @@ export function AppointmentCheckoutDialog({
     defaultValues: {
       discount: 0,
       paymentMethod: '',
+      cardBrand: '',
+      installments: 1,
+      installmentFee: 0,
     },
   });
 
@@ -144,6 +150,9 @@ export function AppointmentCheckoutDialog({
       form.reset({
         discount: 0,
         paymentMethod: '',
+        cardBrand: '',
+        installments: 1,
+        installmentFee: 0,
       });
     }
   }, [open, appointment, form]);
@@ -228,7 +237,18 @@ export function AppointmentCheckoutDialog({
   );
   const subtotal = servicesTotal + productsTotal;
   const discount = form.watch('discount') || 0;
-  const total = subtotal - (subtotal * discount) / 100;
+  const paymentMethod = form.watch('paymentMethod');
+  const installments = form.watch('installments') || 1;
+  const installmentFee = form.watch('installmentFee') || 0;
+  
+  let totalAfterDiscount = subtotal - (subtotal * discount) / 100;
+  
+  // Aplicar acréscimo de parcelas se for crédito
+  if (paymentMethod === 'credit' && installments > 1) {
+    totalAfterDiscount = totalAfterDiscount + (totalAfterDiscount * installmentFee) / 100;
+  }
+  
+  const total = totalAfterDiscount;
 
   const onSubmit = (data: z.infer<typeof checkoutSchema>) => {
     if (services.length === 0) {
@@ -479,6 +499,88 @@ export function AppointmentCheckoutDialog({
                 />
               </div>
 
+              {/* Bandeira do Cartão - aparece para crédito ou débito */}
+              {(paymentMethod === 'credit' || paymentMethod === 'debit') && (
+                <FormField
+                  control={form.control}
+                  name="cardBrand"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bandeira do Cartão</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a bandeira" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="visa">Visa</SelectItem>
+                          <SelectItem value="mastercard">Mastercard</SelectItem>
+                          <SelectItem value="elo">Elo</SelectItem>
+                          <SelectItem value="amex">American Express</SelectItem>
+                          <SelectItem value="hipercard">Hipercard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Parcelas e Acréscimo - aparecem apenas para crédito */}
+              {paymentMethod === 'credit' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="installments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Parcelas</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num}x
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="installmentFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Acréscimo (%)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
               {/* Totais */}
               <div className="space-y-2 p-4 bg-muted rounded-lg">
                 <div className="flex justify-between text-sm">
@@ -499,11 +601,23 @@ export function AppointmentCheckoutDialog({
                     <span>- R$ {((subtotal * discount) / 100).toFixed(2)}</span>
                   </div>
                 )}
+                {paymentMethod === 'credit' && installments > 1 && installmentFee > 0 && (
+                  <div className="flex justify-between text-sm text-primary">
+                    <span>Acréscimo Parcelamento ({installmentFee}%):</span>
+                    <span>+ R$ {(((subtotal - (subtotal * discount) / 100) * installmentFee) / 100).toFixed(2)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
                   <span>R$ {total.toFixed(2)}</span>
                 </div>
+                {paymentMethod === 'credit' && installments > 1 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{installments}x de:</span>
+                    <span>R$ {(total / installments).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
               <DialogFooter>
