@@ -1,0 +1,608 @@
+system:
+  name: "Sistema de Gestão de Salão de Beleza"
+  version: "1.0.0"
+  description: "Sistema completo para gerenciamento de salão de beleza incluindo agendamentos, caixa, comissões e controle financeiro"
+
+modules:
+  
+  authentication:
+    description: "Sistema de autenticação e controle de acesso baseado em roles"
+    features:
+      - login_logout: "Login e logout de usuários"
+      - protected_routes: "Rotas protegidas por autenticação"
+      - role_based_access: "Controle de acesso baseado em papéis"
+    roles:
+      - name: "admin"
+        description: "Administrador com acesso total ao sistema"
+        permissions: "Todas as telas com todas as ações (view, create, edit, delete)"
+      - name: "manager"
+        description: "Gerente com acesso amplo exceto gerenciamento de usuários"
+        permissions: "Acesso a dashboard, serviços, profissionais, itens, agendamentos, caixa, preços, históricos, promoções, clientes, fornecedores, contas a pagar e comissões"
+      - name: "professional"
+        description: "Profissional com acesso limitado"
+        permissions: "Visualização de agendamentos e comissões próprias"
+      - name: "receptionist"
+        description: "Recepcionista para gestão de agendamentos e clientes"
+        permissions: "Gestão de agendamentos e clientes (view, create, edit)"
+
+  dashboard:
+    path: "/dashboard"
+    description: "Painel principal com visão geral do negócio"
+    features:
+      - kpis: "Indicadores chave de performance"
+      - charts: "Gráficos de receita e agendamentos"
+      - recent_activities: "Atividades recentes"
+    permissions:
+      view: ["admin", "manager"]
+
+  users:
+    path: "/users"
+    description: "Gerenciamento de usuários do sistema"
+    features:
+      - user_crud: "Criar, visualizar, editar e excluir usuários"
+      - role_assignment: "Atribuição de papéis aos usuários"
+      - permission_management: "Gerenciamento de permissões por tela e ação"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome completo"
+        - email: "Email para login"
+        - username: "Nome de usuário"
+        - role: "Papel do usuário (admin, manager, professional, receptionist)"
+        - permissions: "Array de permissões específicas"
+    permissions:
+      view: ["admin"]
+      create: ["admin"]
+      edit: ["admin"]
+      delete: ["admin"]
+
+  services:
+    path: "/services"
+    description: "Cadastro de serviços oferecidos pelo salão"
+    features:
+      - service_crud: "Criar, visualizar, editar e excluir serviços"
+      - pricing: "Definição de preço por serviço"
+      - duration: "Tempo de duração do serviço"
+      - commission_setup: "Configuração de comissão por serviço (valor fixo ou percentual)"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome do serviço"
+        - description: "Descrição detalhada"
+        - price: "Preço do serviço"
+        - duration: "Duração em minutos"
+        - category: "Categoria do serviço"
+        - commissionType: "Tipo de comissão (percentage | fixed)"
+        - commissionValue: "Valor da comissão (percentual ou fixo)"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+  professionals:
+    path: "/professionals"
+    description: "Cadastro de profissionais que prestam serviços"
+    features:
+      - professional_crud: "Criar, visualizar, editar e excluir profissionais"
+      - specialties: "Definição de especialidades"
+      - availability: "Controle de disponibilidade"
+      - commission_tracking: "Rastreamento de comissões"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome do profissional"
+        - email: "Email de contato"
+        - phone: "Telefone"
+        - specialties: "Especialidades/serviços que realiza"
+        - status: "Status ativo/inativo"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+  items:
+    path: "/items"
+    description: "Cadastro de produtos vendidos no salão"
+    features:
+      - item_crud: "Criar, visualizar, editar e excluir itens"
+      - inventory_control: "Controle de estoque"
+      - pricing: "Gestão de preços"
+      - commission_setup: "Configuração de comissão por produto (valor fixo ou percentual)"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome do produto"
+        - description: "Descrição"
+        - price: "Preço de venda"
+        - cost: "Custo de aquisição"
+        - stock: "Quantidade em estoque"
+        - minStock: "Estoque mínimo"
+        - category: "Categoria do produto"
+        - supplier: "Fornecedor"
+        - commissionType: "Tipo de comissão (percentage | fixed)"
+        - commissionValue: "Valor da comissão (percentual ou fixo)"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+  appointments:
+    path: "/appointments"
+    description: "Gestão de agendamentos de serviços"
+    features:
+      - appointment_crud: "Criar, visualizar, editar e excluir agendamentos"
+      - calendar_view: "Visualização em calendário"
+      - status_management: "Gerenciamento de status (agendado, confirmado, concluído, cancelado)"
+      - checkout_process: "Processo de checkout com cálculo de comissões"
+      - service_selection: "Seleção de múltiplos serviços"
+      - professional_assignment: "Atribuição de profissional"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - customer: "Cliente"
+        - professional: "Profissional responsável"
+        - services: "Serviços agendados"
+        - date: "Data do agendamento"
+        - time: "Horário"
+        - status: "Status do agendamento"
+        - totalPrice: "Valor total"
+        - notes: "Observações"
+    checkout_flow:
+      steps:
+        - calculate_total: "Cálculo do valor total dos serviços"
+        - process_payment: "Processamento do pagamento"
+        - generate_commissions: "Geração automática de comissões a pagar"
+        - update_cashier: "Registro no caixa (entrada de receita)"
+        - create_accounts_payable: "Criação de contas a pagar para comissões"
+        - update_status: "Atualização do status para 'concluído'"
+    permissions:
+      view: ["admin", "manager", "professional", "receptionist"]
+      create: ["admin", "manager", "receptionist"]
+      edit: ["admin", "manager", "receptionist"]
+      delete: ["admin", "manager"]
+
+  cashier:
+    path: "/cashier"
+    description: "Controle de caixa e movimentações financeiras"
+    features:
+      - transaction_tracking: "Rastreamento de entradas e saídas"
+      - cash_flow: "Fluxo de caixa diário"
+      - payment_methods: "Registro de métodos de pagamento"
+      - commission_expenses: "Registro automático de despesas com comissões"
+      - reports: "Relatórios financeiros"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - date: "Data da transação"
+        - type: "Tipo (entrada | saida)"
+        - category: "Categoria (venda, comissão, despesa, etc)"
+        - description: "Descrição da transação"
+        - amount: "Valor"
+        - paymentMethod: "Método de pagamento"
+        - reference: "Referência (ID do agendamento, etc)"
+    transaction_types:
+      entrada:
+        - appointment_payment: "Pagamento de serviços realizados"
+        - product_sale: "Venda de produtos"
+      saida:
+        - commission_payment: "Pagamento de comissões aos profissionais"
+        - general_expense: "Despesas gerais"
+        - supplier_payment: "Pagamento a fornecedores"
+    permissions:
+      view: ["admin", "manager"]
+
+  commissions:
+    path: "/commissions"
+    description: "Relatório e gestão de comissões dos profissionais"
+    features:
+      - commission_report: "Relatório detalhado de comissões"
+      - filter_by_professional: "Filtro por profissional"
+      - date_range_filter: "Filtro por período"
+      - export_pdf: "Exportação para PDF"
+      - export_excel: "Exportação para Excel"
+      - summary_by_professional: "Resumo de comissões por profissional"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - professional: "Nome do profissional"
+        - date: "Data do serviço"
+        - customer: "Cliente atendido"
+        - service: "Serviço realizado"
+        - servicePrice: "Valor do serviço"
+        - commissionType: "Tipo de comissão"
+        - commissionValue: "Valor/percentual da comissão"
+        - commissionAmount: "Valor calculado da comissão"
+        - status: "Status do pagamento (pendente | pago)"
+    calculation_logic:
+      percentage:
+        formula: "servicePrice * (commissionValue / 100)"
+        example: "R$ 100,00 * (10 / 100) = R$ 10,00"
+      fixed:
+        formula: "commissionValue"
+        example: "R$ 15,00 = R$ 15,00"
+    integration:
+      - trigger: "Checkout de agendamento finalizado"
+      - action: "Criação automática de registro de comissão"
+      - accounts_payable: "Comissão registrada como conta a pagar"
+      - cashier: "Comissão registrada como saída no caixa quando paga"
+    permissions:
+      view: ["admin", "manager", "professional"]
+
+  item_prices:
+    path: "/item-prices"
+    description: "Gestão de preços de itens/produtos"
+    features:
+      - price_management: "Gerenciamento de preços atuais"
+      - bulk_update: "Atualização em lote"
+      - price_history: "Histórico de alterações"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+
+  item_price_histories:
+    path: "/item-price-histories"
+    description: "Histórico de alterações de preços"
+    features:
+      - price_tracking: "Rastreamento de mudanças de preço"
+      - audit_trail: "Trilha de auditoria"
+      - price_analysis: "Análise de evolução de preços"
+    permissions:
+      view: ["admin", "manager"]
+
+  promotions:
+    path: "/promotions"
+    description: "Gestão de promoções e descontos"
+    features:
+      - promotion_crud: "Criar, visualizar, editar e excluir promoções"
+      - discount_rules: "Regras de desconto"
+      - validity_period: "Período de validade"
+      - applicable_services: "Serviços/produtos aplicáveis"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+  customers:
+    path: "/customers"
+    description: "Cadastro de clientes"
+    features:
+      - customer_crud: "Criar, visualizar, editar e excluir clientes"
+      - contact_info: "Informações de contato"
+      - appointment_history: "Histórico de agendamentos"
+      - purchase_history: "Histórico de compras"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome completo"
+        - email: "Email"
+        - phone: "Telefone"
+        - address: "Endereço"
+        - birthDate: "Data de nascimento"
+        - notes: "Observações"
+    permissions:
+      view: ["admin", "manager", "receptionist"]
+      create: ["admin", "manager", "receptionist"]
+      edit: ["admin", "manager", "receptionist"]
+      delete: ["admin", "manager"]
+
+  suppliers:
+    path: "/suppliers"
+    description: "Cadastro de fornecedores"
+    features:
+      - supplier_crud: "Criar, visualizar, editar e excluir fornecedores"
+      - contact_info: "Informações de contato"
+      - product_catalog: "Catálogo de produtos fornecidos"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - name: "Nome/Razão social"
+        - email: "Email"
+        - phone: "Telefone"
+        - address: "Endereço"
+        - cnpj: "CNPJ"
+        - products: "Produtos fornecidos"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+  accounts_payable:
+    path: "/accounts-payable"
+    description: "Gestão de contas a pagar"
+    features:
+      - payable_crud: "Criar, visualizar, editar e excluir contas a pagar"
+      - due_date_tracking: "Controle de vencimentos"
+      - payment_status: "Status de pagamento"
+      - commission_integration: "Integração automática com comissões"
+      - supplier_payments: "Pagamentos a fornecedores"
+    data_structure:
+      fields:
+        - id: "Identificador único"
+        - description: "Descrição da conta"
+        - amount: "Valor"
+        - dueDate: "Data de vencimento"
+        - status: "Status (pendente | pago | atrasado)"
+        - category: "Categoria (comissão, fornecedor, despesa)"
+        - supplier: "Fornecedor (se aplicável)"
+        - professional: "Profissional (se comissão)"
+        - paymentDate: "Data do pagamento"
+        - notes: "Observações"
+    automatic_generation:
+      source: "Checkout de agendamentos"
+      trigger: "Quando agendamento é finalizado e pago"
+      data:
+        - description: "Comissão - [Nome do Profissional] - [Nome do Serviço]"
+        - amount: "Valor calculado da comissão"
+        - category: "comissão"
+        - status: "pendente"
+        - reference: "ID do agendamento"
+    permissions:
+      view: ["admin", "manager"]
+      create: ["admin", "manager"]
+      edit: ["admin", "manager"]
+      delete: ["admin", "manager"]
+
+workflows:
+  
+  appointment_to_commission_flow:
+    name: "Fluxo de Agendamento até Comissão"
+    steps:
+      - step: 1
+        action: "create_appointment"
+        description: "Recepcionista cria agendamento com cliente, profissional e serviços"
+        screen: "appointments"
+        
+      - step: 2
+        action: "confirm_appointment"
+        description: "Agendamento é confirmado"
+        screen: "appointments"
+        
+      - step: 3
+        action: "complete_service"
+        description: "Serviço é realizado pelo profissional"
+        screen: "appointments"
+        
+      - step: 4
+        action: "checkout_process"
+        description: "Checkout do agendamento é iniciado"
+        screen: "appointments"
+        components:
+          - calculate_services_total: "Calcula valor total dos serviços"
+          - select_payment_method: "Seleciona método de pagamento"
+          - process_payment: "Processa pagamento"
+          
+      - step: 5
+        action: "generate_commission"
+        description: "Sistema calcula e gera comissão automaticamente"
+        logic:
+          - get_service_commission_config: "Obtém configuração de comissão do serviço"
+          - calculate_commission: "Calcula valor baseado em tipo (percentage/fixed)"
+          - create_commission_record: "Cria registro na página de comissões"
+          
+      - step: 6
+        action: "create_accounts_payable"
+        description: "Sistema cria conta a pagar para a comissão"
+        screen: "accounts-payable"
+        data:
+          description: "Comissão - [Profissional] - [Serviço]"
+          amount: "Valor calculado"
+          category: "comissão"
+          status: "pendente"
+          
+      - step: 7
+        action: "register_cashier_income"
+        description: "Valor do serviço é registrado como entrada no caixa"
+        screen: "cashier"
+        data:
+          type: "entrada"
+          category: "serviço"
+          amount: "Valor do serviço"
+          
+      - step: 8
+        action: "pay_commission"
+        description: "Gerente efetua pagamento da comissão"
+        screen: "accounts-payable"
+        
+      - step: 9
+        action: "register_cashier_expense"
+        description: "Comissão paga é registrada como saída no caixa"
+        screen: "cashier"
+        data:
+          type: "saida"
+          category: "comissão"
+          amount: "Valor da comissão"
+
+  service_commission_setup:
+    name: "Configuração de Comissão em Serviço"
+    steps:
+      - step: 1
+        action: "access_services"
+        description: "Gerente acessa tela de serviços"
+        screen: "services"
+        
+      - step: 2
+        action: "create_or_edit_service"
+        description: "Cria novo serviço ou edita existente"
+        screen: "services"
+        
+      - step: 3
+        action: "configure_commission"
+        description: "Configura tipo e valor da comissão"
+        fields:
+          - commissionType:
+              options: ["percentage", "fixed"]
+              description: "Seleciona se comissão é percentual ou valor fixo"
+          - commissionValue:
+              percentage: "Valor entre 0-100 (percentual)"
+              fixed: "Valor em reais (fixo)"
+        
+      - step: 4
+        action: "save_service"
+        description: "Salva serviço com configuração de comissão"
+        result: "Comissão será aplicada automaticamente em agendamentos deste serviço"
+
+  commission_report_generation:
+    name: "Geração de Relatório de Comissões"
+    steps:
+      - step: 1
+        action: "access_commissions"
+        description: "Gerente ou profissional acessa tela de comissões"
+        screen: "commissions"
+        
+      - step: 2
+        action: "apply_filters"
+        description: "Aplica filtros desejados"
+        filters:
+          - professional: "Filtra por profissional específico ou 'Todos'"
+          - startDate: "Data inicial do período"
+          - endDate: "Data final do período"
+        
+      - step: 3
+        action: "view_summary"
+        description: "Visualiza resumo de comissões"
+        displays:
+          - total_commissions: "Soma total de comissões no período"
+          - total_services: "Soma total de serviços realizados"
+          - service_count: "Quantidade de serviços"
+          - commission_by_professional: "Resumo agrupado por profissional"
+        
+      - step: 4
+        action: "view_details"
+        description: "Visualiza detalhes em tabela"
+        columns:
+          - professional: "Nome do profissional"
+          - date: "Data do serviço"
+          - customer: "Cliente atendido"
+          - service: "Serviço realizado"
+          - servicePrice: "Valor do serviço"
+          - commissionAmount: "Valor da comissão"
+        
+      - step: 5
+        action: "export_report"
+        description: "Exporta relatório"
+        options:
+          - pdf: "Exporta para PDF formatado"
+          - excel: "Exporta para planilha Excel"
+
+technical_details:
+  
+  frontend:
+    framework: "React 18.3.1"
+    build_tool: "Vite"
+    language: "TypeScript"
+    styling: "Tailwind CSS"
+    ui_components: "Radix UI + shadcn/ui"
+    routing: "React Router DOM 6.30.1"
+    forms: "React Hook Form + Zod validation"
+    state_management: "React Query (TanStack Query)"
+    charts: "Recharts"
+    icons: "Lucide React"
+    
+  data_management:
+    api_client: "Axios"
+    form_validation: "Zod schemas"
+    date_handling: "date-fns"
+    
+  export_features:
+    pdf: "jsPDF + jsPDF-AutoTable"
+    excel: "XLSX library"
+    
+  authentication:
+    strategy: "JWT token-based"
+    storage: "localStorage"
+    protected_routes: "ProtectedRoute component wrapper"
+    
+  permissions:
+    system: "Role-Based Access Control (RBAC)"
+    implementation: "Permission checking per screen and action"
+    location: "src/lib/permissions.ts"
+
+file_structure:
+  components:
+    - AppSidebar.tsx: "Menu lateral de navegação"
+    - AppointmentCheckoutDialog.tsx: "Dialog de checkout com cálculo de comissões"
+    - DataTable.tsx: "Tabela reutilizável com filtros e paginação"
+    - Navbar.tsx: "Barra de navegação superior"
+    - ProtectedRoute.tsx: "Componente de rota protegida"
+    - SidebarLayout.tsx: "Layout com sidebar"
+    - ui/: "Componentes UI do shadcn"
+    
+  pages:
+    - AccountsPayable.tsx: "Tela de contas a pagar"
+    - Appointments.tsx: "Tela de agendamentos"
+    - Cashier.tsx: "Tela de caixa"
+    - Commissions.tsx: "Tela de relatório de comissões"
+    - Customers.tsx: "Tela de clientes"
+    - Dashboard.tsx: "Dashboard principal"
+    - Index.tsx: "Página inicial"
+    - ItemPriceHistories.tsx: "Histórico de preços"
+    - ItemPrices.tsx: "Preços de itens"
+    - Items.tsx: "Cadastro de produtos"
+    - Login.tsx: "Tela de login"
+    - NotFound.tsx: "Página 404"
+    - Professionals.tsx: "Cadastro de profissionais"
+    - Promotions.tsx: "Gestão de promoções"
+    - Services.tsx: "Cadastro de serviços"
+    - Suppliers.tsx: "Cadastro de fornecedores"
+    - Users.tsx: "Gestão de usuários"
+    
+  types:
+    - auth.ts: "Tipos de autenticação, roles, permissões"
+    
+  lib:
+    - permissions.ts: "Configuração de permissões por role"
+    - utils.ts: "Funções utilitárias"
+    
+  services:
+    - api.ts: "Cliente API com Axios"
+    
+  hooks:
+    - useAuthUser.ts: "Hook para obter usuário autenticado"
+    - usePermission.ts: "Hook para verificar permissões"
+    - use-mobile.tsx: "Hook para detectar mobile"
+    - use-toast.ts: "Hook para notificações toast"
+
+integration_points:
+  
+  appointment_checkout:
+    input: "Agendamento finalizado com serviços"
+    process:
+      - calculate_total: "Calcula total dos serviços"
+      - calculate_commissions: "Para cada serviço, calcula comissão do profissional"
+      - create_commission_records: "Cria registros na tabela de comissões"
+      - create_accounts_payable: "Cria contas a pagar para cada comissão"
+      - register_income: "Registra entrada no caixa"
+    output:
+      - updated_appointment: "Agendamento com status 'concluído'"
+      - commission_records: "Registros de comissão criados"
+      - accounts_payable: "Contas a pagar criadas"
+      - cashier_transaction: "Transação de entrada registrada"
+      
+  commission_payment:
+    input: "Conta a pagar de comissão marcada como paga"
+    process:
+      - update_payable_status: "Atualiza status da conta para 'pago'"
+      - update_commission_status: "Atualiza status da comissão para 'pago'"
+      - register_expense: "Registra saída no caixa"
+    output:
+      - paid_commission: "Comissão marcada como paga"
+      - cashier_transaction: "Transação de saída registrada"
+
+future_enhancements:
+  suggested:
+    - backend_integration: "Integração com backend real (Lovable Cloud/Supabase)"
+    - database_persistence: "Persistência de dados em banco de dados"
+    - real_time_updates: "Atualizações em tempo real"
+    - notifications: "Sistema de notificações push"
+    - reports: "Relatórios financeiros avançados"
+    - inventory_alerts: "Alertas de estoque baixo"
+    - appointment_reminders: "Lembretes de agendamento por SMS/Email"
+    - online_booking: "Agendamento online para clientes"
+    - mobile_app: "Aplicativo mobile nativo"
+    - multi_location: "Suporte a múltiplas unidades"
