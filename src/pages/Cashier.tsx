@@ -3,14 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/DataTable';
+import { Badge } from '@/components/ui/badge';
 import { 
   DollarSign, 
   TrendingUp, 
+  TrendingDown,
   Users, 
   Package,
   Download,
   FileText,
   Calendar,
+  ArrowUpCircle,
+  ArrowDownCircle,
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
@@ -18,14 +22,19 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 type Period = 'day' | 'week' | 'month';
-type PaymentMethod = 'Dinheiro' | 'Cartão de Crédito' | 'Cartão de Débito' | 'PIX' | 'Transferência';
+type PaymentMethod = 'Dinheiro' | 'Cartão de Crédito' | 'Cartão de Débito' | 'PIX' | 'Transferência' | 'Boleto';
+type TransactionType = 'entrada' | 'saida';
 
 interface Transaction {
   id: string;
+  type: TransactionType;
   date: string;
-  customer: string;
-  professional: string;
-  service: string;
+  description: string;
+  customer?: string;
+  professional?: string;
+  service?: string;
+  supplier?: string;
+  category?: string;
   items: string;
   paymentMethod: PaymentMethod;
   amount: number;
@@ -33,9 +42,12 @@ interface Transaction {
 
 // Mock data - substituir por dados reais da API
 const mockTransactions: Transaction[] = [
+  // ENTRADAS - Receitas de agendamentos finalizados
   {
     id: '1',
-    date: '2025-10-13 09:00',
+    type: 'entrada',
+    date: '2025-10-17 09:00',
+    description: 'Atendimento - Corte Feminino',
     customer: 'Maria Silva',
     professional: 'João Santos',
     service: 'Corte Feminino',
@@ -45,7 +57,9 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '2',
-    date: '2025-10-13 10:30',
+    type: 'entrada',
+    date: '2025-10-17 10:30',
+    description: 'Atendimento - Coloração',
     customer: 'Ana Costa',
     professional: 'Pedro Lima',
     service: 'Coloração',
@@ -55,7 +69,9 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '3',
-    date: '2025-10-13 14:00',
+    type: 'entrada',
+    date: '2025-10-17 14:00',
+    description: 'Atendimento - Corte Masculino',
     customer: 'Carlos Souza',
     professional: 'João Santos',
     service: 'Corte Masculino',
@@ -65,7 +81,9 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '4',
-    date: '2025-10-12 15:00',
+    type: 'entrada',
+    date: '2025-10-16 15:00',
+    description: 'Atendimento - Hidratação',
     customer: 'Juliana Mendes',
     professional: 'Mariana Alves',
     service: 'Hidratação',
@@ -75,7 +93,9 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: '5',
-    date: '2025-10-11 11:00',
+    type: 'entrada',
+    date: '2025-10-15 11:00',
+    description: 'Atendimento - Barba',
     customer: 'Roberto Dias',
     professional: 'Pedro Lima',
     service: 'Barba',
@@ -83,25 +103,100 @@ const mockTransactions: Transaction[] = [
     paymentMethod: 'PIX',
     amount: 45.00,
   },
+  // SAÍDAS - Despesas de contas a pagar
+  {
+    id: '6',
+    type: 'saida',
+    date: '2025-10-17 08:00',
+    description: 'Compra de Produtos',
+    supplier: 'Distribuidora Beauty Pro',
+    category: 'Produtos',
+    items: 'Tintura, Shampoo, Condicionador',
+    paymentMethod: 'Boleto',
+    amount: 450.00,
+  },
+  {
+    id: '7',
+    type: 'saida',
+    date: '2025-10-15 09:00',
+    description: 'Aluguel do Salão',
+    supplier: 'Imobiliária Santos',
+    category: 'Aluguel',
+    items: 'Aluguel mensal',
+    paymentMethod: 'Transferência',
+    amount: 2500.00,
+  },
+  {
+    id: '8',
+    type: 'saida',
+    date: '2025-10-14 16:00',
+    description: 'Conta de Energia',
+    supplier: 'Companhia de Energia',
+    category: 'Utilities',
+    items: 'Conta de luz',
+    paymentMethod: 'PIX',
+    amount: 380.00,
+  },
+  {
+    id: '9',
+    type: 'saida',
+    date: '2025-10-13 10:00',
+    description: 'Material de Limpeza',
+    supplier: 'Limpeza Total',
+    category: 'Limpeza',
+    items: 'Produtos de limpeza diversos',
+    paymentMethod: 'Dinheiro',
+    amount: 150.00,
+  },
+  {
+    id: '10',
+    type: 'saida',
+    date: '2025-10-12 14:00',
+    description: 'Manutenção de Equipamentos',
+    supplier: 'Técnico João',
+    category: 'Manutenção',
+    items: 'Manutenção secadores',
+    paymentMethod: 'PIX',
+    amount: 200.00,
+  },
 ];
 
 export default function Cashier() {
   const [period, setPeriod] = useState<Period>('day');
   const [selectedDate] = useState(new Date());
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedService, setSelectedService] = useState<string>('all');
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<string>('all');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
 
   // Extract unique values for filters
   const uniqueServices = useMemo(() => {
-    const services = new Set(mockTransactions.map(t => t.service));
+    const services = new Set(
+      mockTransactions
+        .filter(t => t.type === 'entrada' && t.service)
+        .map(t => t.service!)
+    );
     return Array.from(services).sort();
   }, []);
 
   const uniqueProfessionals = useMemo(() => {
-    const professionals = new Set(mockTransactions.map(t => t.professional));
+    const professionals = new Set(
+      mockTransactions
+        .filter(t => t.type === 'entrada' && t.professional)
+        .map(t => t.professional!)
+    );
     return Array.from(professionals).sort();
+  }, []);
+
+  const uniqueSuppliers = useMemo(() => {
+    const suppliers = new Set(
+      mockTransactions
+        .filter(t => t.type === 'saida' && t.supplier)
+        .map(t => t.supplier!)
+    );
+    return Array.from(suppliers).sort();
   }, []);
 
   const uniqueItems = useMemo(() => {
@@ -144,11 +239,20 @@ export default function Cashier() {
         periodMatch = transactionDate >= monthAgo;
       }
 
-      // Service filter
-      const serviceMatch = selectedService === 'all' || transaction.service === selectedService;
+      // Type filter
+      const typeMatch = selectedType === 'all' || transaction.type === selectedType;
 
-      // Professional filter
-      const professionalMatch = selectedProfessional === 'all' || transaction.professional === selectedProfessional;
+      // Service filter (only for entradas)
+      const serviceMatch = selectedService === 'all' || 
+        (transaction.type === 'entrada' && transaction.service === selectedService);
+
+      // Professional filter (only for entradas)
+      const professionalMatch = selectedProfessional === 'all' || 
+        (transaction.type === 'entrada' && transaction.professional === selectedProfessional);
+
+      // Supplier filter (only for saidas)
+      const supplierMatch = selectedSupplier === 'all' || 
+        (transaction.type === 'saida' && transaction.supplier === selectedSupplier);
 
       // Item filter
       const itemMatch = selectedItem === 'all' || 
@@ -157,42 +261,73 @@ export default function Cashier() {
       // Payment method filter
       const paymentMatch = selectedPaymentMethod === 'all' || transaction.paymentMethod === selectedPaymentMethod;
 
-      return periodMatch && serviceMatch && professionalMatch && itemMatch && paymentMatch;
+      return periodMatch && typeMatch && serviceMatch && professionalMatch && supplierMatch && itemMatch && paymentMatch;
     });
-  }, [period, selectedService, selectedProfessional, selectedItem, selectedPaymentMethod]);
+  }, [period, selectedType, selectedService, selectedProfessional, selectedSupplier, selectedItem, selectedPaymentMethod]);
 
   const summary = useMemo(() => {
-    const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const entradas = filteredTransactions.filter(t => t.type === 'entrada');
+    const saidas = filteredTransactions.filter(t => t.type === 'saida');
+    
+    const totalEntradas = entradas.reduce((sum, t) => sum + t.amount, 0);
+    const totalSaidas = saidas.reduce((sum, t) => sum + t.amount, 0);
+    const saldo = totalEntradas - totalSaidas;
+    
     const transactions = filteredTransactions.length;
-    const avgTicket = transactions > 0 ? total / transactions : 0;
+    const avgTicketEntradas = entradas.length > 0 ? totalEntradas / entradas.length : 0;
     
     const byPaymentMethod = filteredTransactions.reduce((acc, t) => {
-      acc[t.paymentMethod] = (acc[t.paymentMethod] || 0) + t.amount;
-      return acc;
-    }, {} as Record<PaymentMethod, number>);
-
-    const byProfessional = filteredTransactions.reduce((acc, t) => {
-      acc[t.professional] = (acc[t.professional] || 0) + t.amount;
+      const key = `${t.type}-${t.paymentMethod}`;
+      acc[key] = (acc[key] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
-    const byService = filteredTransactions.reduce((acc, t) => {
-      acc[t.service] = (acc[t.service] || 0) + t.amount;
+    const byProfessional = entradas.reduce((acc, t) => {
+      if (t.professional) {
+        acc[t.professional] = (acc[t.professional] || 0) + t.amount;
+      }
       return acc;
     }, {} as Record<string, number>);
 
-    const byCustomer = filteredTransactions.reduce((acc, t) => {
-      acc[t.customer] = (acc[t.customer] || 0) + t.amount;
+    const byService = entradas.reduce((acc, t) => {
+      if (t.service) {
+        acc[t.service] = (acc[t.service] || 0) + t.amount;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const bySupplier = saidas.reduce((acc, t) => {
+      if (t.supplier) {
+        acc[t.supplier] = (acc[t.supplier] || 0) + t.amount;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byCategory = saidas.reduce((acc, t) => {
+      if (t.category) {
+        acc[t.category] = (acc[t.category] || 0) + t.amount;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byCustomer = entradas.reduce((acc, t) => {
+      if (t.customer) {
+        acc[t.customer] = (acc[t.customer] || 0) + t.amount;
+      }
       return acc;
     }, {} as Record<string, number>);
 
     return {
-      total,
+      totalEntradas,
+      totalSaidas,
+      saldo,
       transactions,
-      avgTicket,
+      avgTicketEntradas,
       byPaymentMethod,
       byProfessional,
       byService,
+      bySupplier,
+      byCategory,
       byCustomer,
     };
   }, [filteredTransactions]);
@@ -201,22 +336,23 @@ export default function Cashier() {
     const doc = new jsPDF();
     
     doc.setFontSize(18);
-    doc.text('Relatório de Caixa', 14, 22);
+    doc.text('Relatório de Fluxo de Caixa', 14, 22);
     
     doc.setFontSize(11);
     doc.text(`Período: ${getPeriodLabel()}`, 14, 32);
-    doc.text(`Total: R$ ${summary.total.toFixed(2)}`, 14, 40);
-    doc.text(`Transações: ${summary.transactions}`, 14, 48);
-    doc.text(`Ticket Médio: R$ ${summary.avgTicket.toFixed(2)}`, 14, 56);
+    doc.text(`Total Entradas: R$ ${summary.totalEntradas.toFixed(2)}`, 14, 40);
+    doc.text(`Total Saídas: R$ ${summary.totalSaidas.toFixed(2)}`, 14, 48);
+    doc.text(`Saldo: R$ ${summary.saldo.toFixed(2)}`, 14, 56);
+    doc.text(`Transações: ${summary.transactions}`, 14, 64);
 
     autoTable(doc, {
-      startY: 65,
-      head: [['Data', 'Cliente', 'Profissional', 'Serviço', 'Forma Pgto', 'Valor']],
+      startY: 72,
+      head: [['Data', 'Tipo', 'Descrição', 'Origem/Destino', 'Forma Pgto', 'Valor']],
       body: filteredTransactions.map(t => [
         new Date(t.date).toLocaleString('pt-BR'),
-        t.customer,
-        t.professional,
-        t.service,
+        t.type === 'entrada' ? 'Entrada' : 'Saída',
+        t.description,
+        t.type === 'entrada' ? t.customer || '-' : t.supplier || '-',
         t.paymentMethod,
         `R$ ${t.amount.toFixed(2)}`,
       ]),
@@ -229,9 +365,13 @@ export default function Cashier() {
     const ws = XLSX.utils.json_to_sheet(
       filteredTransactions.map(t => ({
         Data: new Date(t.date).toLocaleString('pt-BR'),
-        Cliente: t.customer,
-        Profissional: t.professional,
-        Serviço: t.service,
+        Tipo: t.type === 'entrada' ? 'Entrada' : 'Saída',
+        Descrição: t.description,
+        Cliente: t.customer || '-',
+        Fornecedor: t.supplier || '-',
+        Profissional: t.professional || '-',
+        Serviço: t.service || '-',
+        Categoria: t.category || '-',
         Itens: t.items,
         'Forma de Pagamento': t.paymentMethod,
         'Valor (R$)': t.amount.toFixed(2),
@@ -243,9 +383,11 @@ export default function Cashier() {
 
     // Add summary sheet
     const summaryData = [
-      { Métrica: 'Total Faturado', Valor: `R$ ${summary.total.toFixed(2)}` },
+      { Métrica: 'Total Entradas', Valor: `R$ ${summary.totalEntradas.toFixed(2)}` },
+      { Métrica: 'Total Saídas', Valor: `R$ ${summary.totalSaidas.toFixed(2)}` },
+      { Métrica: 'Saldo', Valor: `R$ ${summary.saldo.toFixed(2)}` },
       { Métrica: 'Número de Transações', Valor: summary.transactions },
-      { Métrica: 'Ticket Médio', Valor: `R$ ${summary.avgTicket.toFixed(2)}` },
+      { Métrica: 'Ticket Médio (Entradas)', Valor: `R$ ${summary.avgTicketEntradas.toFixed(2)}` },
     ];
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
@@ -268,29 +410,35 @@ export default function Cashier() {
 
   const columns = [
     {
+      key: 'type',
+      header: 'Tipo',
+      render: (transaction: Transaction) => (
+        <Badge variant={transaction.type === 'entrada' ? 'default' : 'destructive'} className={transaction.type === 'entrada' ? 'bg-green-500' : 'bg-red-500'}>
+          {transaction.type === 'entrada' ? (
+            <><ArrowUpCircle className="h-3 w-3 mr-1" /> Entrada</>
+          ) : (
+            <><ArrowDownCircle className="h-3 w-3 mr-1" /> Saída</>
+          )}
+        </Badge>
+      ),
+    },
+    {
       key: 'date',
       header: 'Data/Hora',
       render: (transaction: Transaction) => new Date(transaction.date).toLocaleString('pt-BR'),
     },
     {
-      key: 'customer',
-      header: 'Cliente',
-      render: (transaction: Transaction) => transaction.customer,
+      key: 'description',
+      header: 'Descrição',
+      render: (transaction: Transaction) => transaction.description,
     },
     {
-      key: 'professional',
-      header: 'Profissional',
-      render: (transaction: Transaction) => transaction.professional,
-    },
-    {
-      key: 'service',
-      header: 'Serviço',
-      render: (transaction: Transaction) => transaction.service,
-    },
-    {
-      key: 'items',
-      header: 'Itens',
-      render: (transaction: Transaction) => transaction.items,
+      key: 'origin',
+      header: 'Origem/Destino',
+      render: (transaction: Transaction) => 
+        transaction.type === 'entrada' 
+          ? transaction.customer || '-'
+          : transaction.supplier || '-',
     },
     {
       key: 'paymentMethod',
@@ -300,7 +448,11 @@ export default function Cashier() {
     {
       key: 'amount',
       header: 'Valor',
-      render: (transaction: Transaction) => `R$ ${transaction.amount.toFixed(2)}`,
+      render: (transaction: Transaction) => (
+        <span className={transaction.type === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+          {transaction.type === 'entrada' ? '+' : '-'} R$ {transaction.amount.toFixed(2)}
+        </span>
+      ),
     },
   ];
 
@@ -330,7 +482,7 @@ export default function Cashier() {
           <CardDescription>Refine os resultados por período e outros critérios</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Período</label>
               <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
@@ -341,6 +493,20 @@ export default function Cashier() {
                   <SelectItem value="day">Hoje</SelectItem>
                   <SelectItem value="week">Última Semana</SelectItem>
                   <SelectItem value="month">Último Mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo</label>
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="entrada">Entradas</SelectItem>
+                  <SelectItem value="saida">Saídas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -380,16 +546,16 @@ export default function Cashier() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Item</label>
-              <Select value={selectedItem} onValueChange={setSelectedItem}>
+              <label className="text-sm font-medium">Fornecedor</label>
+              <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Itens</SelectItem>
-                  {uniqueItems.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
+                  <SelectItem value="all">Todos os Fornecedores</SelectItem>
+                  {uniqueSuppliers.map((supplier) => (
+                    <SelectItem key={supplier} value={supplier}>
+                      {supplier}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -417,15 +583,37 @@ export default function Cashier() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Entradas</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">R$ {summary.totalEntradas.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">{getPeriodLabel()}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Saídas</CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">R$ {summary.totalSaidas.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">{getPeriodLabel()}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saldo</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {summary.total.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">{getPeriodLabel()}</p>
+            <div className={`text-2xl font-bold ${summary.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              R$ {summary.saldo.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Entradas - Saídas</p>
           </CardContent>
         </Card>
         <Card>
@@ -435,7 +623,7 @@ export default function Cashier() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.transactions}</div>
-            <p className="text-xs text-muted-foreground">Total de atendimentos</p>
+            <p className="text-xs text-muted-foreground">Total no período</p>
           </CardContent>
         </Card>
         <Card>
@@ -444,43 +632,67 @@ export default function Cashier() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {summary.avgTicket.toFixed(2)}</div>
+            <div className="text-2xl font-bold">R$ {summary.avgTicketEntradas.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Por atendimento</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(summary.byCustomer).length}</div>
-            <p className="text-xs text-muted-foreground">No período</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Detailed Reports */}
       <Tabs defaultValue="transactions" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="transactions">Transações</TabsTrigger>
-          <TabsTrigger value="payment">Por Forma de Pagamento</TabsTrigger>
-          <TabsTrigger value="professional">Por Profissional</TabsTrigger>
-          <TabsTrigger value="service">Por Serviço</TabsTrigger>
-          <TabsTrigger value="customer">Por Cliente</TabsTrigger>
+        <TabsList className="grid grid-cols-3 lg:grid-cols-7 w-full">
+          <TabsTrigger value="transactions">Todas</TabsTrigger>
+          <TabsTrigger value="entradas">Entradas</TabsTrigger>
+          <TabsTrigger value="saidas">Saídas</TabsTrigger>
+          <TabsTrigger value="payment">Forma Pgto</TabsTrigger>
+          <TabsTrigger value="professional">Profissionais</TabsTrigger>
+          <TabsTrigger value="supplier">Fornecedores</TabsTrigger>
+          <TabsTrigger value="category">Categorias</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Transações Detalhadas</CardTitle>
-              <CardDescription>Lista completa de todas as transações do período</CardDescription>
+              <CardTitle>Todas as Transações</CardTitle>
+              <CardDescription>Lista completa de entradas e saídas do período</CardDescription>
             </CardHeader>
             <CardContent>
               <DataTable
                 data={filteredTransactions}
                 columns={columns}
-                searchPlaceholder="Buscar por cliente, profissional ou serviço..."
+                searchPlaceholder="Buscar por descrição, cliente, fornecedor..."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="entradas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Receitas (Entradas)</CardTitle>
+              <CardDescription>Receitas provenientes de agendamentos finalizados</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={filteredTransactions.filter(t => t.type === 'entrada')}
+                columns={columns}
+                searchPlaceholder="Buscar por cliente ou serviço..."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="saidas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Despesas (Saídas)</CardTitle>
+              <CardDescription>Despesas de contas pagas aos fornecedores</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={filteredTransactions.filter(t => t.type === 'saida')}
+                columns={columns}
+                searchPlaceholder="Buscar por fornecedor ou categoria..."
               />
             </CardContent>
           </Card>
@@ -560,9 +772,59 @@ export default function Cashier() {
                   .map(([customer, amount]) => (
                     <div key={customer} className="flex items-center justify-between border-b pb-2">
                       <span className="font-medium">{customer}</span>
-                      <span className="text-lg font-bold">R$ {amount.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-green-600">R$ {amount.toFixed(2)}</span>
                     </div>
                   ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="supplier" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Despesas por Fornecedor</CardTitle>
+              <CardDescription>Maiores fornecedores do período</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(summary.bySupplier).length > 0 ? (
+                  Object.entries(summary.bySupplier)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([supplier, amount]) => (
+                      <div key={supplier} className="flex items-center justify-between border-b pb-2">
+                        <span className="font-medium">{supplier}</span>
+                        <span className="text-lg font-bold text-red-600">R$ {amount.toFixed(2)}</span>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Nenhuma despesa com fornecedores no período</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="category" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Despesas por Categoria</CardTitle>
+              <CardDescription>Distribuição de despesas por tipo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(summary.byCategory).length > 0 ? (
+                  Object.entries(summary.byCategory)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([category, amount]) => (
+                      <div key={category} className="flex items-center justify-between border-b pb-2">
+                        <span className="font-medium">{category}</span>
+                        <span className="text-lg font-bold text-red-600">R$ {amount.toFixed(2)}</span>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Nenhuma despesa categorizada no período</p>
+                )}
               </div>
             </CardContent>
           </Card>
