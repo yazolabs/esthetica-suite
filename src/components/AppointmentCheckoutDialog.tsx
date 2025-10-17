@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 
 const checkoutSchema = z.object({
@@ -249,6 +249,416 @@ export function AppointmentCheckoutDialog({
   }
   
   const total = totalAfterDiscount;
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'Agendado';
+      case 'confirmed':
+        return 'Confirmado';
+      case 'completed':
+        return 'Concluído';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  };
+
+  const printAppointmentReceipt = () => {
+    if (!appointment) return;
+
+    const professionalNames = appointment.professionals
+      .map((id) => mockProfessionals.find((p) => p.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+
+    const date = new Date(appointment.date);
+    const formattedDate = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      weekday: 'long',
+    });
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Não foi possível abrir a janela de impressão. Verifique se pop-ups não estão bloqueados.');
+      return;
+    }
+
+    const paymentMethodLabels: Record<string, string> = {
+      cash: 'Dinheiro',
+      credit: 'Cartão de Crédito',
+      debit: 'Cartão de Débito',
+      pix: 'PIX',
+    };
+
+    const cardBrandLabels: Record<string, string> = {
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      elo: 'Elo',
+      amex: 'American Express',
+      hipercard: 'Hipercard',
+    };
+
+    const paymentInfo = form.getValues();
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Comanda - ${appointment.client}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              max-width: 800px;
+              margin: 0 auto;
+              line-height: 1.6;
+            }
+            
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 3px solid #e63888;
+            }
+            
+            .header h1 {
+              color: #e63888;
+              font-size: 28px;
+              margin-bottom: 10px;
+            }
+            
+            .header p {
+              color: #666;
+              font-size: 14px;
+            }
+            
+            .section {
+              margin-bottom: 25px;
+            }
+            
+            .section-title {
+              background-color: #e63888;
+              color: white;
+              padding: 8px 12px;
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 12px;
+              border-radius: 4px;
+            }
+            
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-bottom: 15px;
+            }
+            
+            .info-item {
+              padding: 10px;
+              background-color: #f8f9fa;
+              border-left: 3px solid #e63888;
+              border-radius: 4px;
+            }
+            
+            .info-label {
+              font-size: 12px;
+              color: #666;
+              text-transform: uppercase;
+              margin-bottom: 4px;
+              font-weight: 600;
+            }
+            
+            .info-value {
+              font-size: 16px;
+              color: #333;
+              font-weight: 500;
+            }
+            
+            .full-width {
+              grid-column: 1 / -1;
+            }
+            
+            .status-badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 14px;
+              font-weight: 600;
+            }
+            
+            .status-scheduled {
+              background-color: #fef3c7;
+              color: #92400e;
+            }
+            
+            .status-confirmed {
+              background-color: #dbeafe;
+              color: #1e40af;
+            }
+            
+            .status-completed {
+              background-color: #d1fae5;
+              color: #065f46;
+            }
+            
+            .status-cancelled {
+              background-color: #fee2e2;
+              color: #991b1b;
+            }
+            
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px dashed #ccc;
+              text-align: center;
+              color: #666;
+              font-size: 12px;
+            }
+            
+            .price-highlight {
+              font-size: 24px;
+              color: #e63888;
+              font-weight: bold;
+            }
+            
+            .notes-box {
+              background-color: #fffbeb;
+              border: 1px solid #fbbf24;
+              padding: 12px;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #78350f;
+            }
+
+            .service-item, .product-item {
+              padding: 8px;
+              background-color: #f8f9fa;
+              border-radius: 4px;
+              margin-bottom: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+
+            .totals-box {
+              background-color: #f8f9fa;
+              padding: 15px;
+              border-radius: 4px;
+              border: 2px solid #e63888;
+            }
+
+            .total-line {
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              font-size: 14px;
+            }
+
+            .total-line.final {
+              font-size: 20px;
+              font-weight: bold;
+              color: #e63888;
+              border-top: 2px solid #e63888;
+              padding-top: 10px;
+              margin-top: 10px;
+            }
+            
+            @media print {
+              body {
+                padding: 10px;
+              }
+              
+              .no-print {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🌸 Studio Unhas Delicadas 🌸</h1>
+            <p>Michele Fonseca e Equipe</p>
+            <p style="margin-top: 10px; font-size: 16px; font-weight: 600;">COMANDA DE ATENDIMENTO</p>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Informações do Cliente</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Cliente</div>
+                <div class="info-value">${appointment.client}</div>
+              </div>
+              ${appointment.clientPhone ? `
+                <div class="info-item">
+                  <div class="info-label">Telefone</div>
+                  <div class="info-value">${appointment.clientPhone}</div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Detalhes do Agendamento</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Data</div>
+                <div class="info-value">${formattedDate}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Horário</div>
+                <div class="info-value">${appointment.time}</div>
+              </div>
+              ${appointment.duration ? `
+                <div class="info-item">
+                  <div class="info-label">Duração</div>
+                  <div class="info-value">${appointment.duration} minutos</div>
+                </div>
+              ` : ''}
+              <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                  <span class="status-badge status-${appointment.status}">
+                    ${getStatusLabel(appointment.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Serviços Realizados</div>
+            ${services.length > 0 ? services.map(service => `
+              <div class="service-item">
+                <div>
+                  <strong>${service.name}</strong>
+                  <div style="font-size: 12px; color: #666;">
+                    Profissionais: ${service.professionals.map(id => 
+                      mockProfessionals.find(p => p.id === id)?.name
+                    ).join(', ')}
+                  </div>
+                </div>
+                <div style="font-weight: bold;">R$ ${service.price.toFixed(2)}</div>
+              </div>
+            `).join('') : `
+              <div class="info-item">
+                <div class="info-value">${appointment.service}</div>
+                <div style="font-weight: bold;">R$ ${(appointment.price || 0).toFixed(2)}</div>
+              </div>
+            `}
+          </div>
+
+          ${products.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Produtos Adquiridos</div>
+              ${products.map(product => `
+                <div class="product-item">
+                  <div>
+                    <strong>${product.name}</strong>
+                    <div style="font-size: 12px; color: #666;">Quantidade: ${product.quantity}</div>
+                  </div>
+                  <div style="font-weight: bold;">R$ ${(product.price * product.quantity).toFixed(2)}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <div class="section">
+            <div class="section-title">Resumo Financeiro</div>
+            <div class="totals-box">
+              <div class="total-line">
+                <span>Subtotal Serviços:</span>
+                <span>R$ ${servicesTotal.toFixed(2)}</span>
+              </div>
+              ${products.length > 0 ? `
+                <div class="total-line">
+                  <span>Subtotal Produtos:</span>
+                  <span>R$ ${productsTotal.toFixed(2)}</span>
+                </div>
+              ` : ''}
+              <div class="total-line">
+                <span>Subtotal:</span>
+                <span>R$ ${subtotal.toFixed(2)}</span>
+              </div>
+              ${discount > 0 ? `
+                <div class="total-line" style="color: #dc2626;">
+                  <span>Desconto (${discount}%):</span>
+                  <span>- R$ ${((subtotal * discount) / 100).toFixed(2)}</span>
+                </div>
+              ` : ''}
+              ${paymentMethod === 'credit' && installments > 1 && installmentFee > 0 ? `
+                <div class="total-line" style="color: #e63888;">
+                  <span>Acréscimo Parcelamento (${installmentFee}%):</span>
+                  <span>+ R$ ${(((subtotal - (subtotal * discount) / 100) * installmentFee) / 100).toFixed(2)}</span>
+                </div>
+              ` : ''}
+              <div class="total-line final">
+                <span>TOTAL:</span>
+                <span>R$ ${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${paymentInfo.paymentMethod ? `
+            <div class="section">
+              <div class="section-title">Forma de Pagamento</div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Método</div>
+                  <div class="info-value">${paymentMethodLabels[paymentInfo.paymentMethod] || paymentInfo.paymentMethod}</div>
+                </div>
+                ${paymentInfo.cardBrand ? `
+                  <div class="info-item">
+                    <div class="info-label">Bandeira</div>
+                    <div class="info-value">${cardBrandLabels[paymentInfo.cardBrand] || paymentInfo.cardBrand}</div>
+                  </div>
+                ` : ''}
+                ${paymentInfo.paymentMethod === 'credit' && installments > 1 ? `
+                  <div class="info-item">
+                    <div class="info-label">Parcelamento</div>
+                    <div class="info-value">${installments}x de R$ ${(total / installments).toFixed(2)}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+
+          ${appointment.notes ? `
+            <div class="section">
+              <div class="section-title">Observações</div>
+              <div class="notes-box">
+                ${appointment.notes}
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="footer">
+            <p><strong>Studio Unhas Delicadas - Michele Fonseca e Equipe</strong></p>
+            <p>Comanda impressa em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            <p style="margin-top: 10px;">Obrigado pela preferência! 💅</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  };
 
   const onSubmit = (data: z.infer<typeof checkoutSchema>) => {
     if (services.length === 0) {
@@ -620,11 +1030,22 @@ export function AppointmentCheckoutDialog({
                 )}
               </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={printAppointmentReceipt}
+                  className="gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Imprimir Comanda
                 </Button>
-                <Button type="submit">Finalizar Atendimento</Button>
+                <div className="flex gap-2 flex-1 justify-end">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit">Finalizar Atendimento</Button>
+                </div>
               </DialogFooter>
             </form>
           </Form>
