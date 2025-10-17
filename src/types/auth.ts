@@ -11,7 +11,9 @@ export type Screen =
   | 'item-prices'
   | 'item-price-histories'
   | 'promotions'
-  | 'customers';
+  | 'customers'
+  | 'suppliers'
+  | 'accounts-payable';
 
 export type Action = 'view' | 'create' | 'edit' | 'delete';
 

@@ -19,6 +19,8 @@ const Cashier = lazy(() => import("./pages/Cashier"));
 const ItemPrices = lazy(() => import("./pages/ItemPrices"));
 const ItemPriceHistories = lazy(() => import("./pages/ItemPriceHistories"));
 const Promotions = lazy(() => import("./pages/Promotions"));
+const Suppliers = lazy(() => import("./pages/Suppliers"));
+const AccountsPayable = lazy(() => import("./pages/AccountsPayable"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -150,6 +152,26 @@ const App = () => (
                 <ProtectedRoute screen="promotions">
                   <SidebarLayout>
                     <Promotions />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/suppliers"
+              element={
+                <ProtectedRoute screen="suppliers">
+                  <SidebarLayout>
+                    <Suppliers />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounts-payable"
+              element={
+                <ProtectedRoute screen="accounts-payable">
+                  <SidebarLayout>
+                    <AccountsPayable />
                   </SidebarLayout>
                 </ProtectedRoute>
               }

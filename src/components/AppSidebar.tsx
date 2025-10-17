@@ -12,6 +12,8 @@ import {
   Megaphone,
   UserCircle,
   Wallet,
+  Store,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,6 +48,8 @@ const navItems: NavItem[] = [
   { title: 'Itens', url: '/items', icon: Package, screen: 'items' },
   { title: 'Agendamentos', url: '/appointments', icon: Calendar, screen: 'appointments' },
   { title: 'Caixa', url: '/cashier', icon: Wallet, screen: 'cashier' },
+  { title: 'Fornecedores', url: '/suppliers', icon: Store, screen: 'suppliers' },
+  { title: 'Contas a Pagar', url: '/accounts-payable', icon: FileText, screen: 'accounts-payable' },
   { title: 'Preços', url: '/item-prices', icon: DollarSign, screen: 'item-prices' },
   { title: 'Histórico de Preços', url: '/item-price-histories', icon: History, screen: 'item-price-histories' },
   { title: 'Promoções e Campanhas', url: '/promotions', icon: Megaphone, screen: 'promotions' },
