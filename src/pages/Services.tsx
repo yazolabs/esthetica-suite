@@ -54,6 +54,8 @@ interface Service {
   description: string;
   status: 'active' | 'inactive';
   requirements?: string;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: number;
 }
 
 const serviceSchema = z.object({
@@ -65,6 +67,8 @@ const serviceSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória').max(500),
   status: z.enum(['active', 'inactive']),
   requirements: z.string().max(200).optional(),
+  commissionType: z.enum(['percentage', 'fixed']),
+  commissionValue: z.coerce.number().min(0, 'Valor da comissão deve ser positivo'),
 });
 
 const mockServices: Service[] = [
@@ -77,7 +81,9 @@ const mockServices: Service[] = [
     size: 'medium',
     description: 'Corte feminino completo com lavagem e finalização',
     status: 'active',
-    requirements: 'Cabelos limpos e secos'
+    requirements: 'Cabelos limpos e secos',
+    commissionType: 'percentage',
+    commissionValue: 30
   },
   { 
     id: '2', 
@@ -87,7 +93,9 @@ const mockServices: Service[] = [
     price: 'R$ 40,00',
     size: 'small',
     description: 'Corte masculino tradicional',
-    status: 'active'
+    status: 'active',
+    commissionType: 'percentage',
+    commissionValue: 30
   },
   { 
     id: '3', 
@@ -97,18 +105,22 @@ const mockServices: Service[] = [
     price: 'R$ 35,00',
     size: 'small',
     description: 'Manicure completa com esmaltação',
-    status: 'active'
+    status: 'active',
+    commissionType: 'fixed',
+    commissionValue: 10
   },
   { 
     id: '4', 
     name: 'Massagem Relaxante', 
     category: 'Massagem', 
-    duration: 90, 
+    duration: 90,
     price: 'R$ 120,00',
     size: 'large',
     description: 'Massagem relaxante de corpo inteiro',
     status: 'active',
-    requirements: 'Consultar contraindicações'
+    requirements: 'Consultar contraindicações',
+    commissionType: 'percentage',
+    commissionValue: 25
   },
 ];
 
@@ -157,6 +169,8 @@ export default function Services() {
       description: '',
       status: 'active',
       requirements: '',
+      commissionType: 'percentage',
+      commissionValue: 0,
     });
     setDialogOpen(true);
   };
@@ -172,6 +186,8 @@ export default function Services() {
       description: service.description,
       status: service.status,
       requirements: service.requirements || '',
+      commissionType: service.commissionType,
+      commissionValue: service.commissionValue,
     });
     setDialogOpen(true);
   };
@@ -208,7 +224,9 @@ export default function Services() {
               size: values.size,
               description: values.description,
               status: values.status,
-              requirements: values.requirements || undefined
+              requirements: values.requirements || undefined,
+              commissionType: values.commissionType,
+              commissionValue: values.commissionValue,
             } 
           : s
       ));
@@ -227,6 +245,8 @@ export default function Services() {
         description: values.description,
         status: values.status,
         requirements: values.requirements || undefined,
+        commissionType: values.commissionType,
+        commissionValue: values.commissionValue,
       };
       setServices([...services, newService]);
       toast({
@@ -430,6 +450,51 @@ export default function Services() {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="commissionType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Comissão</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentual (%)</SelectItem>
+                          <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="commissionValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {form.watch('commissionType') === 'percentage' ? 'Percentual (%)' : 'Valor Fixo (R$)'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step={form.watch('commissionType') === 'percentage' ? '1' : '0.01'} 
+                          placeholder={form.watch('commissionType') === 'percentage' ? 'Ex: 30' : 'Ex: 15.00'}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

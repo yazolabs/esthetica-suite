@@ -55,6 +55,8 @@ interface Item {
   barcode?: string;
   costPrice: number;
   salePrice: number;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: number;
 }
 
 const itemSchema = z.object({
@@ -67,6 +69,8 @@ const itemSchema = z.object({
   barcode: z.string().trim().max(50, 'Código de barras muito longo').optional(),
   costPrice: z.coerce.number().min(0, 'Preço de custo inválido'),
   salePrice: z.coerce.number().min(0, 'Preço de venda inválido'),
+  commissionType: z.enum(['percentage', 'fixed']),
+  commissionValue: z.coerce.number().min(0, 'Valor da comissão deve ser positivo'),
 });
 
 const mockItems: Item[] = [
@@ -80,7 +84,9 @@ const mockItems: Item[] = [
     unit: 'un',
     barcode: '7891234567890',
     costPrice: 15.50,
-    salePrice: 35.00
+    salePrice: 35.00,
+    commissionType: 'fixed',
+    commissionValue: 5.00
   },
   { 
     id: '2', 
@@ -90,7 +96,9 @@ const mockItems: Item[] = [
     minStock: 5,
     unit: 'un',
     costPrice: 8.00,
-    salePrice: 18.00
+    salePrice: 18.00,
+    commissionType: 'fixed',
+    commissionValue: 3.00
   },
   { 
     id: '3', 
@@ -100,7 +108,9 @@ const mockItems: Item[] = [
     minStock: 3,
     unit: 'L',
     costPrice: 25.00,
-    salePrice: 55.00
+    salePrice: 55.00,
+    commissionType: 'percentage',
+    commissionValue: 15
   },
   { 
     id: '4', 
@@ -110,7 +120,9 @@ const mockItems: Item[] = [
     minStock: 5,
     unit: 'kg',
     costPrice: 30.00,
-    salePrice: 65.00
+    salePrice: 65.00,
+    commissionType: 'fixed',
+    commissionValue: 8.00
   },
 ];
 
@@ -150,6 +162,8 @@ export default function Items() {
         barcode: item.barcode || '',
         costPrice: item.costPrice,
         salePrice: item.salePrice,
+        commissionType: item.commissionType,
+        commissionValue: item.commissionValue,
       });
     } else {
       setEditingItem(null);
@@ -163,6 +177,8 @@ export default function Items() {
         barcode: '',
         costPrice: 0,
         salePrice: 0,
+        commissionType: 'percentage',
+        commissionValue: 0,
       });
     }
     setIsDialogOpen(true);
@@ -197,6 +213,8 @@ export default function Items() {
         barcode: data.barcode,
         costPrice: data.costPrice,
         salePrice: data.salePrice,
+        commissionType: data.commissionType,
+        commissionValue: data.commissionValue,
       };
       setItems([...items, newItem]);
       toast({
@@ -489,6 +507,51 @@ export default function Items() {
                           type="number" 
                           step="0.01" 
                           placeholder="0.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="commissionType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Comissão *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentual (%)</SelectItem>
+                          <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="commissionValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {form.watch('commissionType') === 'percentage' ? 'Percentual (%)' : 'Valor Fixo (R$)'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step={form.watch('commissionType') === 'percentage' ? '1' : '0.01'} 
+                          placeholder={form.watch('commissionType') === 'percentage' ? 'Ex: 15' : 'Ex: 5.00'}
                           {...field} 
                         />
                       </FormControl>
