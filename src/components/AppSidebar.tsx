@@ -39,20 +39,50 @@ interface NavItem {
   screen: Screen;
 }
 
-const navItems: NavItem[] = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, screen: 'dashboard' },
-  { title: 'Clientes', url: '/customers', icon: UserCircle, screen: 'customers' },
-  { title: 'Usuários', url: '/users', icon: Users, screen: 'users' },
-  { title: 'Serviços', url: '/services', icon: Scissors, screen: 'services' },
-  { title: 'Profissionais', url: '/professionals', icon: UserCog, screen: 'professionals' },
-  { title: 'Itens', url: '/items', icon: Package, screen: 'items' },
-  { title: 'Agendamentos', url: '/appointments', icon: Calendar, screen: 'appointments' },
-  { title: 'Caixa', url: '/cashier', icon: Wallet, screen: 'cashier' },
-  { title: 'Fornecedores', url: '/suppliers', icon: Store, screen: 'suppliers' },
-  { title: 'Contas a Pagar', url: '/accounts-payable', icon: FileText, screen: 'accounts-payable' },
-  { title: 'Preços', url: '/item-prices', icon: DollarSign, screen: 'item-prices' },
-  { title: 'Histórico de Preços', url: '/item-price-histories', icon: History, screen: 'item-price-histories' },
-  { title: 'Promoções e Campanhas', url: '/promotions', icon: Megaphone, screen: 'promotions' },
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    label: 'Principal',
+    items: [
+      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, screen: 'dashboard' },
+      { title: 'Agendamentos', url: '/appointments', icon: Calendar, screen: 'appointments' },
+      { title: 'Caixa', url: '/cashier', icon: Wallet, screen: 'cashier' },
+    ],
+  },
+  {
+    label: 'Cadastros',
+    items: [
+      { title: 'Clientes', url: '/customers', icon: UserCircle, screen: 'customers' },
+      { title: 'Profissionais', url: '/professionals', icon: UserCog, screen: 'professionals' },
+      { title: 'Usuários', url: '/users', icon: Users, screen: 'users' },
+    ],
+  },
+  {
+    label: 'Serviços e Produtos',
+    items: [
+      { title: 'Serviços', url: '/services', icon: Scissors, screen: 'services' },
+      { title: 'Itens', url: '/items', icon: Package, screen: 'items' },
+      { title: 'Preços', url: '/item-prices', icon: DollarSign, screen: 'item-prices' },
+      { title: 'Histórico de Preços', url: '/item-price-histories', icon: History, screen: 'item-price-histories' },
+    ],
+  },
+  {
+    label: 'Financeiro',
+    items: [
+      { title: 'Fornecedores', url: '/suppliers', icon: Store, screen: 'suppliers' },
+      { title: 'Contas a Pagar', url: '/accounts-payable', icon: FileText, screen: 'accounts-payable' },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { title: 'Promoções', url: '/promotions', icon: Megaphone, screen: 'promotions' },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -63,43 +93,50 @@ export function AppSidebar() {
   const { canAccess } = usePermission();
 
   const collapsed = state === 'collapsed';
-  const filteredItems = navItems.filter((item) => canAccess(item.screen));
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Filter sections based on user permissions
+  const filteredSections = navSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => canAccess(item.screen))
+  })).filter(section => section.items.length > 0);
+
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <NavLink
-                        to={item.url}
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                            : 'hover:bg-sidebar-accent/50'
-                        }
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {filteredSections.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <NavLink
+                          to={item.url}
+                          className={({ isActive }) =>
+                            isActive
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                              : 'hover:bg-sidebar-accent/50'
+                          }
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">
