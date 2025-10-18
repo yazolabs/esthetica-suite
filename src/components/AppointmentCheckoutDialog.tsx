@@ -137,6 +137,7 @@ export function AppointmentCheckoutDialog({
   const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [productQuantity, setProductQuantity] = useState(1);
+  const [selectedPromotion, setSelectedPromotion] = useState<string>('');
 
   // Verificar promoções ativas
   const activePromotions = mockPromotions.filter(promo => {
@@ -146,6 +147,21 @@ export function AppointmentCheckoutDialog({
     const endDate = new Date(promo.endDate);
     return today >= startDate && today <= endDate;
   });
+
+  // Aplicar desconto quando promoção for selecionada
+  const handlePromotionChange = (promotionId: string) => {
+    setSelectedPromotion(promotionId);
+    
+    if (promotionId) {
+      const promotion = activePromotions.find(p => p.id === promotionId);
+      if (promotion && promotion.discount) {
+        const discountValue = parseInt(promotion.discount.replace('%', ''));
+        form.setValue('discount', discountValue);
+      }
+    } else {
+      form.setValue('discount', 0);
+    }
+  };
 
   const form = useForm<z.infer<typeof checkoutSchema>>({
     resolver: zodResolver(checkoutSchema),
@@ -795,25 +811,40 @@ export function AppointmentCheckoutDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Promoções Ativas */}
+        {/* Selecionar Promoção/Campanha */}
         {activePromotions.length > 0 && (
-          <div className="space-y-2">
-            {activePromotions.map((promo) => (
-              <Alert key={promo.id} className="border-primary/50 bg-primary/5">
-                <Tag className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-primary font-semibold">
-                  {promo.name}
-                  {promo.discount && (
-                    <Badge variant="secondary" className="ml-2">
-                      {promo.discount}
-                    </Badge>
-                  )}
-                </AlertTitle>
-                <AlertDescription className="text-sm">
-                  {promo.description}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Promoção/Campanha</h3>
+            </div>
+            <Select value={selectedPromotion} onValueChange={handlePromotionChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma promoção (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhuma promoção</SelectItem>
+                {activePromotions.map((promo) => (
+                  <SelectItem key={promo.id} value={promo.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>{promo.name}</span>
+                      {promo.discount && (
+                        <Badge variant="secondary" className="ml-2">
+                          {promo.discount}
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedPromotion && (
+              <Alert className="border-success/50 bg-success/5">
+                <AlertDescription className="text-sm text-success">
+                  ✓ Promoção aplicada: {activePromotions.find(p => p.id === selectedPromotion)?.description}
                 </AlertDescription>
               </Alert>
-            ))}
+            )}
           </div>
         )}
 
