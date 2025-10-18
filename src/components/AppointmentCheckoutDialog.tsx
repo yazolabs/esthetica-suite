@@ -152,7 +152,7 @@ export function AppointmentCheckoutDialog({
   const handlePromotionChange = (promotionId: string) => {
     setSelectedPromotion(promotionId);
     
-    if (promotionId) {
+    if (promotionId && promotionId !== 'none') {
       const promotion = activePromotions.find(p => p.id === promotionId);
       if (promotion && promotion.discount) {
         const discountValue = parseInt(promotion.discount.replace('%', ''));
@@ -823,7 +823,7 @@ export function AppointmentCheckoutDialog({
                 <SelectValue placeholder="Selecione uma promoção (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhuma promoção</SelectItem>
+                <SelectItem value="none">Nenhuma promoção</SelectItem>
                 {activePromotions.map((promo) => (
                   <SelectItem key={promo.id} value={promo.id}>
                     <div className="flex items-center justify-between gap-3">
@@ -838,7 +838,7 @@ export function AppointmentCheckoutDialog({
                 ))}
               </SelectContent>
             </Select>
-            {selectedPromotion && (
+            {selectedPromotion && selectedPromotion !== 'none' && (
               <Alert className="border-success/50 bg-success/5">
                 <AlertDescription className="text-sm text-success">
                   ✓ Promoção aplicada: {activePromotions.find(p => p.id === selectedPromotion)?.description}
