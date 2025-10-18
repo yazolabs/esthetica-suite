@@ -106,12 +106,12 @@ const mockProducts = [
 const mockPromotions = [
   {
     id: '1',
-    name: 'Promoção Verão 2025',
+    name: 'Promoção Primavera 2025',
     description: 'Desconto de 20% em todos os serviços',
     type: 'discount' as const,
     discount: '20%',
-    startDate: '2025-01-01',
-    endDate: '2025-03-31',
+    startDate: '2025-10-01',
+    endDate: '2025-12-31',
     status: 'active' as const,
   },
   {
@@ -120,8 +120,8 @@ const mockPromotions = [
     description: 'Ganhe 10% de desconto na próxima visita',
     type: 'campaign' as const,
     discount: '10%',
-    startDate: '2025-01-15',
-    endDate: '2025-02-15',
+    startDate: '2025-10-01',
+    endDate: '2025-11-30',
     status: 'active' as const,
   },
 ];
