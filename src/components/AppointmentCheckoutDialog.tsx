@@ -29,7 +29,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, Printer } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { X, Plus, Printer, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
 const checkoutSchema = z.object({
@@ -102,6 +103,29 @@ const mockProducts = [
   { id: '4', name: 'Esmalte', price: 15 },
 ];
 
+const mockPromotions = [
+  {
+    id: '1',
+    name: 'Promoção Verão 2025',
+    description: 'Desconto de 20% em todos os serviços',
+    type: 'discount' as const,
+    discount: '20%',
+    startDate: '2025-01-01',
+    endDate: '2025-03-31',
+    status: 'active' as const,
+  },
+  {
+    id: '2',
+    name: 'Campanha Clientes VIP',
+    description: 'Ganhe 10% de desconto na próxima visita',
+    type: 'campaign' as const,
+    discount: '10%',
+    startDate: '2025-01-15',
+    endDate: '2025-02-15',
+    status: 'active' as const,
+  },
+];
+
 export function AppointmentCheckoutDialog({
   open,
   onOpenChange,
@@ -113,6 +137,15 @@ export function AppointmentCheckoutDialog({
   const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [productQuantity, setProductQuantity] = useState(1);
+
+  // Verificar promoções ativas
+  const activePromotions = mockPromotions.filter(promo => {
+    if (promo.status !== 'active') return false;
+    const today = new Date();
+    const startDate = new Date(promo.startDate);
+    const endDate = new Date(promo.endDate);
+    return today >= startDate && today <= endDate;
+  });
 
   const form = useForm<z.infer<typeof checkoutSchema>>({
     resolver: zodResolver(checkoutSchema),
@@ -761,6 +794,28 @@ export function AppointmentCheckoutDialog({
             {appointment.time}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Promoções Ativas */}
+        {activePromotions.length > 0 && (
+          <div className="space-y-2">
+            {activePromotions.map((promo) => (
+              <Alert key={promo.id} className="border-primary/50 bg-primary/5">
+                <Tag className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-primary font-semibold">
+                  {promo.name}
+                  {promo.discount && (
+                    <Badge variant="secondary" className="ml-2">
+                      {promo.discount}
+                    </Badge>
+                  )}
+                </AlertTitle>
+                <AlertDescription className="text-sm">
+                  {promo.description}
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Serviços */}
