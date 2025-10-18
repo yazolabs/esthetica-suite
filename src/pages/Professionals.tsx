@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 interface WorkSchedule {
   dayOfWeek: string;
   isWorkingDay: boolean;
+  isDayOff: boolean;
   morningStart: string;
   morningEnd: string;
   afternoonStart: string;
@@ -37,13 +38,13 @@ interface WorkSchedule {
 }
 
 const defaultSchedule: WorkSchedule[] = [
-  { dayOfWeek: 'Segunda-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
-  { dayOfWeek: 'Terça-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
-  { dayOfWeek: 'Quarta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
-  { dayOfWeek: 'Quinta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
-  { dayOfWeek: 'Sexta-feira', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
-  { dayOfWeek: 'Sábado', isWorkingDay: true, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '', afternoonEnd: '' },
-  { dayOfWeek: 'Domingo', isWorkingDay: false, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
+  { dayOfWeek: 'Segunda-feira', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Terça-feira', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Quarta-feira', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Quinta-feira', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Sexta-feira', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '14:00', afternoonEnd: '18:00' },
+  { dayOfWeek: 'Sábado', isWorkingDay: true, isDayOff: false, morningStart: '08:00', morningEnd: '12:00', afternoonStart: '', afternoonEnd: '' },
+  { dayOfWeek: 'Domingo', isWorkingDay: false, isDayOff: true, morningStart: '', morningEnd: '', afternoonStart: '', afternoonEnd: '' },
 ];
 
 const professionalSchema = z.object({
@@ -54,6 +55,7 @@ const professionalSchema = z.object({
   schedule: z.array(z.object({
     dayOfWeek: z.string(),
     isWorkingDay: z.boolean(),
+    isDayOff: z.boolean(),
     morningStart: z.string(),
     morningEnd: z.string(),
     afternoonStart: z.string(),
@@ -400,24 +402,41 @@ export default function Professionals() {
                   <div key={day.dayOfWeek} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <FormLabel className="text-sm font-medium">{day.dayOfWeek}</FormLabel>
-                      <FormField
-                        control={form.control}
-                        name={`schedule.${index}.isWorkingDay`}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="text-xs font-normal">Dia útil</FormLabel>
-                          </FormItem>
-                        )}
-                      />
+                      <div className="flex gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`schedule.${index}.isWorkingDay`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-xs font-normal">Dia útil</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`schedule.${index}.isDayOff`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-xs font-normal">Folga</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                     
-                    {form.watch(`schedule.${index}.isWorkingDay`) && (
+                    {form.watch(`schedule.${index}.isWorkingDay`) && !form.watch(`schedule.${index}.isDayOff`) && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <FormLabel className="text-xs text-muted-foreground">Manhã</FormLabel>
