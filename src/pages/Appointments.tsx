@@ -794,34 +794,37 @@ export default function Appointments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agendamentos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Agendamentos</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Gerencie os agendamentos do salão
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row gap-2">
           <div className="flex gap-1 border rounded-lg p-1">
             <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
+              className="text-xs md:text-sm"
             >
-              <Table className="h-4 w-4 mr-2" />
-              Tabela
+              <Table className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Tabela</span>
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
+              className="text-xs md:text-sm"
             >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Calendário
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Calendário</span>
             </Button>
           </div>
           {can('appointments', 'create') && (
-            <Button className="shadow-md" onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Agendamento
+            <Button className="shadow-md text-xs md:text-sm h-8 md:h-10" onClick={() => handleOpenDialog()}>
+              <Plus className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden sm:inline">Novo Agendamento</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           )}
         </div>

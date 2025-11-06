@@ -178,40 +178,40 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
   };
 
   return (
-    <Card className="p-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">
+    <Card className="p-3 md:p-6">
+      <div className="mb-4 md:mb-6">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <h3 className="text-base md:text-lg font-semibold">
             {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
           </h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={previousMonth}>
-              <ChevronLeft className="h-4 w-4" />
+          <div className="flex gap-1 md:gap-2">
+            <Button variant="outline" size="icon" onClick={previousMonth} className="h-8 w-8 md:h-10 md:w-10">
+              <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={nextMonth}>
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="outline" size="icon" onClick={nextMonth} className="h-8 w-8 md:h-10 md:w-10">
+              <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="mb-4">
-          <p className="text-sm font-medium mb-2">Legenda:</p>
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-3 md:mb-4">
+          <p className="text-xs md:text-sm font-medium mb-2">Legenda:</p>
+          <div className="flex flex-wrap gap-2 md:gap-3">
             {professionalsWithColors.map((prof) => (
-              <div key={prof.id} className="flex items-center gap-2">
-                <div className={cn('w-4 h-4 rounded border-2', prof.colorScheme.bg, prof.colorScheme.border)} />
-                <span className="text-sm">{prof.name}</span>
+              <div key={prof.id} className="flex items-center gap-1.5 md:gap-2">
+                <div className={cn('w-3 h-3 md:w-4 md:h-4 rounded border-2', prof.colorScheme.bg, prof.colorScheme.border)} />
+                <span className="text-xs md:text-sm">{prof.name}</span>
               </div>
             ))}
           </div>
-          <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-3 md:gap-4 mt-2 text-[10px] md:text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded border-2 opacity-100" />
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded border-2 opacity-100" />
               <span>Disponível</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded border-2 opacity-40" />
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded border-2 opacity-40" />
               <span>Ocupado</span>
             </div>
           </div>
@@ -220,14 +220,15 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
 
       {/* Calendar Grid */}
       <TooltipProvider delayDuration={200}>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 md:gap-1">
         {/* Week day headers */}
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-medium text-muted-foreground py-2"
+            className="text-center text-[10px] md:text-sm font-medium text-muted-foreground py-1 md:py-2"
           >
-            {day}
+            <span className="hidden md:inline">{day}</span>
+            <span className="md:hidden">{day.substring(0, 1)}</span>
           </div>
         ))}
 
@@ -243,14 +244,14 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
                 <div
                   onClick={() => isCurrentMonth && onDayClick?.(day)}
                   className={cn(
-                    'min-h-[80px] border rounded-lg p-1 relative transition-all',
+                    'min-h-[60px] md:min-h-[80px] border rounded-md md:rounded-lg p-0.5 md:p-1 relative transition-all',
                     !isCurrentMonth && 'bg-muted/30',
-                    isTodayDate && 'ring-2 ring-primary',
+                    isTodayDate && 'ring-1 md:ring-2 ring-primary',
                     isCurrentMonth && onDayClick && 'cursor-pointer hover:bg-accent hover:shadow-md'
                   )}
                 >
               <div className={cn(
-                'text-xs font-medium mb-1',
+                'text-[10px] md:text-xs font-medium mb-0.5 md:mb-1',
                 !isCurrentMonth && 'text-muted-foreground',
                 isTodayDate && 'text-primary font-bold'
               )}>
@@ -263,7 +264,7 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
                   <div
                     key={`available-${prof.id}`}
                     className={cn(
-                      'w-2 h-2 rounded-full',
+                      'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full',
                       prof.colorScheme.bg,
                       'border',
                       prof.colorScheme.border
@@ -275,7 +276,7 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
                   <div
                     key={`busy-${prof.id}`}
                     className={cn(
-                      'w-2 h-2 rounded-full opacity-40',
+                      'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full opacity-40',
                       prof.colorScheme.bg,
                       'border',
                       prof.colorScheme.border
@@ -287,13 +288,13 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
 
               {/* Appointment count */}
               {(availableProfessionals.length > 0 || busyProfessionals.length > 0) && (
-                <div className="text-[10px] text-muted-foreground mt-1">
+                <div className="text-[8px] md:text-[10px] text-muted-foreground mt-0.5 md:mt-1">
                   {busyProfessionals.length > 0 && `${busyProfessionals.length} ocupado`}
                 </div>
               )}
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm">
+              <TooltipContent side="top" className="max-w-[280px] md:max-w-sm text-xs md:text-sm">
                 {generateTooltipContent(day)}
               </TooltipContent>
             </Tooltip>
