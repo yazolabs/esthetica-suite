@@ -284,7 +284,7 @@ export default function Appointments() {
     },
   });
 
-  const handleOpenDialog = (appointment?: Appointment) => {
+  const handleOpenDialog = (appointment?: Appointment, prefilledDate?: Date) => {
     if (appointment) {
       setEditingAppointment(appointment);
       form.reset({
@@ -306,6 +306,7 @@ export default function Appointments() {
         clientPhone: '',
         service: '',
         professionals: [],
+        date: prefilledDate,
         time: '',
         duration: undefined,
         status: 'scheduled',
@@ -314,6 +315,10 @@ export default function Appointments() {
       });
     }
     setIsDialogOpen(true);
+  };
+
+  const handleCalendarDayClick = (date: Date) => {
+    handleOpenDialog(undefined, date);
   };
 
   const handleCloseDialog = () => {
@@ -826,6 +831,7 @@ export default function Appointments() {
         <MonthlyAvailabilityCalendar 
           professionals={mockProfessionals}
           appointments={appointments}
+          onDayClick={can('appointments', 'create') ? handleCalendarDayClick : undefined}
         />
       ) : (
         <DataTable

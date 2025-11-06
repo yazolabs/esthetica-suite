@@ -32,6 +32,7 @@ interface Appointment {
 interface MonthlyAvailabilityCalendarProps {
   professionals: Professional[];
   appointments: Appointment[];
+  onDayClick?: (date: Date) => void;
 }
 
 const professionalColors = [
@@ -45,7 +46,7 @@ const professionalColors = [
   { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-300' },
 ];
 
-export function MonthlyAvailabilityCalendar({ professionals, appointments }: MonthlyAvailabilityCalendarProps) {
+export function MonthlyAvailabilityCalendar({ professionals, appointments, onDayClick }: MonthlyAvailabilityCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthStart = startOfMonth(currentDate);
@@ -164,10 +165,12 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments }: Mon
           return (
             <div
               key={idx}
+              onClick={() => isCurrentMonth && onDayClick?.(day)}
               className={cn(
-                'min-h-[80px] border rounded-lg p-1 relative',
+                'min-h-[80px] border rounded-lg p-1 relative transition-all',
                 !isCurrentMonth && 'bg-muted/30',
-                isTodayDate && 'ring-2 ring-primary'
+                isTodayDate && 'ring-2 ring-primary',
+                isCurrentMonth && onDayClick && 'cursor-pointer hover:bg-accent hover:shadow-md'
               )}
             >
               <div className={cn(
