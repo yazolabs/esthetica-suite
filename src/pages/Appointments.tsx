@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer, Table } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import { AppointmentCheckoutDialog } from '@/components/AppointmentCheckoutDialog';
+import { MonthlyAvailabilityCalendar } from '@/components/MonthlyAvailabilityCalendar';
 import {
   Dialog,
   DialogContent,
@@ -265,6 +266,7 @@ export default function Appointments() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const { can } = usePermission();
 
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -792,19 +794,46 @@ export default function Appointments() {
             Gerencie os agendamentos do salão
           </p>
         </div>
-        {can('appointments', 'create') && (
-          <Button className="shadow-md" onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <div className="flex gap-1 border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+            >
+              <Table className="h-4 w-4 mr-2" />
+              Tabela
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+            >
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Calendário
+            </Button>
+          </div>
+          {can('appointments', 'create') && (
+            <Button className="shadow-md" onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Agendamento
+            </Button>
+          )}
+        </div>
       </div>
 
-      <DataTable
-        data={appointments}
-        columns={columns}
-        searchPlaceholder="Buscar agendamentos..."
-      />
+      {viewMode === 'calendar' ? (
+        <MonthlyAvailabilityCalendar 
+          professionals={mockProfessionals}
+          appointments={appointments}
+        />
+      ) : (
+        <DataTable
+          data={appointments}
+          columns={columns}
+          searchPlaceholder="Buscar agendamentos..."
+        />
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
