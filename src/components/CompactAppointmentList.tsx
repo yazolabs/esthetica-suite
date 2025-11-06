@@ -1,11 +1,12 @@
-import { format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO, differenceInMinutes, differenceInHours, isPast, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer, CalendarCheck } from 'lucide-react';
+import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer, CalendarCheck, Timer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 
 interface Professional {
   id: string;
@@ -77,6 +78,17 @@ export function CompactAppointmentList({
   canEdit = false,
   canDelete = false,
 }: CompactAppointmentListProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update time every 30 seconds for more accurate countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Sort appointments by date and time
   const sortedAppointments = [...appointments].sort((a, b) => {
     const dateCompare = a.date.localeCompare(b.date);
@@ -87,6 +99,36 @@ export function CompactAppointmentList({
   // Separate today's appointments from others
   const todayAppointments = sortedAppointments.filter(apt => isToday(parseISO(apt.date)));
   const otherAppointments = sortedAppointments.filter(apt => !isToday(parseISO(apt.date)));
+
+  // Find next appointment for today
+  const getNextTodayAppointment = () => {
+    const now = currentTime;
+    const upcomingAppointments = todayAppointments.filter(apt => {
+      const appointmentDateTime = parse(`${apt.date} ${apt.time}`, 'yyyy-MM-dd HH:mm', new Date());
+      return !isPast(appointmentDateTime) && (apt.status === 'scheduled' || apt.status === 'confirmed');
+    });
+
+    return upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  };
+
+  const formatTimeUntil = (appointment: Appointment) => {
+    const now = currentTime;
+    const appointmentDateTime = parse(`${appointment.date} ${appointment.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    
+    const totalMinutes = differenceInMinutes(appointmentDateTime, now);
+    
+    if (totalMinutes < 0) return "Agora";
+    if (totalMinutes === 0) return "Agora";
+    if (totalMinutes < 60) return `em ${totalMinutes}min`;
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (minutes === 0) return `em ${hours}h`;
+    return `em ${hours}h ${minutes}min`;
+  };
+
+  const nextAppointment = getNextTodayAppointment();
 
   // Group other appointments by date
   const groupedAppointments = otherAppointments.reduce((groups, appointment) => {
@@ -234,17 +276,35 @@ export function CompactAppointmentList({
       {/* Today's Appointments Section */}
       {todayAppointments.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border-2 border-primary/20">
-            <CalendarCheck className="h-5 w-5 text-primary" />
-            <div>
-              <h3 className="text-base font-bold text-primary">Agendamentos de Hoje</h3>
-              <p className="text-xs text-primary/70">
-                {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-              </p>
+          <div className="bg-primary/10 p-3 rounded-lg border-2 border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-primary">Agendamentos de Hoje</h3>
+                <p className="text-xs text-primary/70">
+                  {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                </p>
+              </div>
+              <Badge variant="secondary" className="bg-primary text-primary-foreground">
+                {todayAppointments.length}
+              </Badge>
             </div>
-            <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
-              {todayAppointments.length}
-            </Badge>
+            
+            {/* Next Appointment Countdown */}
+            {nextAppointment && (
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-primary/20">
+                <Timer className="h-4 w-4 text-primary animate-pulse" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-primary">Próximo agendamento:</p>
+                  <p className="text-xs text-primary/70">
+                    {nextAppointment.client} às {nextAppointment.time}
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-primary/20 text-primary border-primary/30 font-bold">
+                  {formatTimeUntil(nextAppointment)}
+                </Badge>
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">
