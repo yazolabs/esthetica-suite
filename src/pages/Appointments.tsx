@@ -127,8 +127,8 @@ const mockAppointments: Appointment[] = [
     clientPhone: '(11) 98765-4321',
     service: 'Corte Feminino', 
     professionals: ['1'], 
-    date: '2025-10-15', 
-    time: '14:00', 
+    date: '2025-11-15', 
+    time: '09:00', 
     duration: 60,
     status: 'scheduled',
     price: 80,
@@ -138,9 +138,9 @@ const mockAppointments: Appointment[] = [
     id: '2', 
     client: 'Carlos Souza', 
     service: 'Corte Masculino', 
-    professionals: ['2'], 
-    date: '2025-10-15', 
-    time: '15:00', 
+    professionals: ['1'], 
+    date: '2025-11-15', 
+    time: '14:00', 
     duration: 45,
     status: 'confirmed',
     price: 50
@@ -149,25 +149,113 @@ const mockAppointments: Appointment[] = [
     id: '3', 
     client: 'Beatriz Lima', 
     service: 'Manicure', 
-    professionals: ['3'], 
-    date: '2025-10-15', 
-    time: '16:00', 
+    professionals: ['2'], 
+    date: '2025-11-16', 
+    time: '10:00', 
     duration: 30,
-    status: 'completed',
+    status: 'scheduled',
     price: 35
   },
   { 
     id: '4', 
     client: 'Diego Alves', 
     service: 'Massagem', 
-    professionals: ['4', '1'], 
-    date: '2025-10-16', 
-    time: '10:00', 
+    professionals: ['1', '2'], 
+    date: '2025-11-16', 
+    time: '15:00', 
     duration: 90,
-    status: 'cancelled',
+    status: 'scheduled',
     price: 120
   },
 ];
+
+// Generate time slots (every 30 minutes from 08:00 to 18:00)
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 18; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      if (hour === 18 && minute > 0) break; // Stop at 18:00
+      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(timeStr);
+    }
+  }
+  return slots;
+};
+
+// Check if a time slot conflicts with existing appointments
+const isTimeSlotAvailable = (
+  appointments: Appointment[],
+  selectedDate: Date | undefined,
+  timeSlot: string,
+  duration: number | undefined,
+  selectedProfessionals: string[],
+  currentAppointmentId?: string
+): boolean => {
+  if (!selectedDate || !duration || selectedProfessionals.length === 0) return true;
+
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const [hours, minutes] = timeSlot.split(':').map(Number);
+  const slotStart = hours * 60 + minutes;
+  const slotEnd = slotStart + duration;
+
+  // Check conflicts for each selected professional
+  return selectedProfessionals.every(professionalId => {
+    const professionalAppointments = appointments.filter(
+      apt => apt.date === dateStr && 
+             apt.professionals.includes(professionalId) &&
+             apt.id !== currentAppointmentId &&
+             apt.status !== 'cancelled'
+    );
+
+    return professionalAppointments.every(apt => {
+      const [aptHours, aptMinutes] = apt.time.split(':').map(Number);
+      const aptStart = aptHours * 60 + aptMinutes;
+      const aptEnd = aptStart + apt.duration;
+
+      // No overlap if slot ends before appointment starts or starts after appointment ends
+      return slotEnd <= aptStart || slotStart >= aptEnd;
+    });
+  });
+};
+
+// Get available time slots based on selected date, professionals, and duration
+const getAvailableTimeSlots = (
+  appointments: Appointment[],
+  selectedDate: Date | undefined,
+  selectedProfessionals: string[],
+  duration: number | undefined,
+  currentAppointmentId?: string
+): string[] => {
+  if (!selectedDate || selectedProfessionals.length === 0) {
+    return generateTimeSlots();
+  }
+
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  
+  // Check if date is within open windows for all selected professionals
+  const professionalsWithWindows = mockProfessionals.filter(
+    p => selectedProfessionals.includes(p.id) && p.openWindows && p.openWindows.length > 0
+  );
+
+  if (professionalsWithWindows.length > 0) {
+    const isDateInOpenWindow = professionalsWithWindows.every(professional => {
+      return professional.openWindows!.some(window => {
+        if (window.status !== 'open') return false;
+        return dateStr >= window.date_start && dateStr <= window.date_end;
+      });
+    });
+
+    if (!isDateInOpenWindow) {
+      return []; // No available slots if date is not in open windows
+    }
+  }
+
+  const allSlots = generateTimeSlots();
+  
+  return allSlots.filter(slot => 
+    isTimeSlotAvailable(appointments, selectedDate, slot, duration, selectedProfessionals, currentAppointmentId)
+  );
+};
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
@@ -908,15 +996,70 @@ export default function Appointments() {
                 <FormField
                   control={form.control}
                   name="time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horário *</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selectedDate = form.watch('date');
+                    const selectedProfessionals = form.watch('professionals');
+                    const selectedDuration = form.watch('duration');
+                    
+                    const availableSlots = getAvailableTimeSlots(
+                      appointments,
+                      selectedDate,
+                      selectedProfessionals,
+                      selectedDuration,
+                      editingAppointment?.id
+                    );
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Horário *</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={!selectedDate || selectedProfessionals.length === 0 || !selectedDuration}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um horário" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableSlots.length === 0 ? (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Nenhum horário disponível
+                              </div>
+                            ) : (
+                              availableSlots.map((slot) => (
+                                <SelectItem key={slot} value={slot}>
+                                  {slot}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {!selectedDate && (
+                          <p className="text-sm text-muted-foreground">
+                            Selecione uma data primeiro
+                          </p>
+                        )}
+                        {selectedDate && selectedProfessionals.length === 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            Selecione um profissional
+                          </p>
+                        )}
+                        {selectedDate && selectedProfessionals.length > 0 && !selectedDuration && (
+                          <p className="text-sm text-muted-foreground">
+                            Defina a duração do serviço
+                          </p>
+                        )}
+                        {selectedDate && selectedProfessionals.length > 0 && selectedDuration && availableSlots.length === 0 && (
+                          <p className="text-sm text-destructive">
+                            Sem horários disponíveis para esta data
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
