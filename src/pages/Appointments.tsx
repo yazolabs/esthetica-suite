@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer, Table } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer, Table, List } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import { AppointmentCheckoutDialog } from '@/components/AppointmentCheckoutDialog';
 import { MonthlyAvailabilityCalendar } from '@/components/MonthlyAvailabilityCalendar';
+import { CompactAppointmentList } from '@/components/CompactAppointmentList';
 import {
   Dialog,
   DialogContent,
@@ -266,7 +267,7 @@ export default function Appointments() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'list'>('table');
   const { can } = usePermission();
 
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -283,6 +284,9 @@ export default function Appointments() {
       price: undefined,
     },
   });
+
+  const canEdit = can('appointments', 'edit');
+  const canDelete = can('appointments', 'delete');
 
   const handleOpenDialog = (appointment?: Appointment, prefilledDate?: Date) => {
     if (appointment) {
@@ -805,19 +809,28 @@ export default function Appointments() {
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
-              className="text-xs md:text-sm"
+              className="text-xs md:text-sm hidden md:flex"
             >
-              <Table className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Tabela</span>
+              <Table className="h-4 w-4 mr-2" />
+              Tabela
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="text-xs md:text-sm flex-1 md:flex-none"
+            >
+              <List className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="md:inline">Lista</span>
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
-              className="text-xs md:text-sm"
+              className="text-xs md:text-sm flex-1 md:flex-none"
             >
               <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Calendário</span>
+              <span className="md:inline">Calendário</span>
             </Button>
           </div>
           {can('appointments', 'create') && (
@@ -835,6 +848,17 @@ export default function Appointments() {
           professionals={mockProfessionals}
           appointments={appointments}
           onDayClick={can('appointments', 'create') ? handleCalendarDayClick : undefined}
+        />
+      ) : viewMode === 'list' ? (
+        <CompactAppointmentList
+          appointments={appointments}
+          professionals={mockProfessionals}
+          onEdit={canEdit ? handleOpenDialog : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
+          onCheckout={canEdit ? handleCheckout : undefined}
+          onPrint={printAppointmentReceipt}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       ) : (
         <DataTable
