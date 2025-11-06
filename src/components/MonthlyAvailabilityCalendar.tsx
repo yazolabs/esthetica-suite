@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface OpenWindow {
@@ -103,6 +104,79 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
     return { availableProfessionals, busyProfessionals };
   };
 
+  const getDayAppointments = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return appointments.filter(apt => 
+      apt.date === dateStr && apt.status !== 'cancelled'
+    );
+  };
+
+  const generateTooltipContent = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayAppointments = getDayAppointments(date);
+    const { availableProfessionals, busyProfessionals } = getDayAvailability(date);
+
+    if (dayAppointments.length === 0 && availableProfessionals.length === 0 && busyProfessionals.length === 0) {
+      return (
+        <div className="text-sm">
+          <p className="font-medium mb-1">{format(date, "dd 'de' MMMM", { locale: ptBR })}</p>
+          <p className="text-muted-foreground">Nenhum profissional disponível</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2 max-w-xs">
+        <p className="font-medium">{format(date, "dd 'de' MMMM", { locale: ptBR })}</p>
+        
+        {dayAppointments.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold mb-1">Agendamentos:</p>
+            <div className="space-y-1">
+              {dayAppointments.map(apt => {
+                const professionalNames = apt.professionals
+                  .map(id => professionals.find(p => p.id === id)?.name)
+                  .filter(Boolean)
+                  .join(', ');
+                return (
+                  <div key={apt.id} className="text-xs">
+                    <span className="font-medium">{apt.time}</span> - {professionalNames}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {availableProfessionals.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold mb-1 text-green-600">Disponíveis:</p>
+            <div className="flex flex-wrap gap-1">
+              {availableProfessionals.map(prof => (
+                <span key={prof.id} className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                  {prof.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {busyProfessionals.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold mb-1 text-orange-600">Com agendamentos:</p>
+            <div className="flex flex-wrap gap-1">
+              {busyProfessionals.map(prof => (
+                <span key={prof.id} className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
+                  {prof.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card className="p-6">
       <div className="mb-6">
@@ -145,7 +219,8 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <TooltipProvider delayDuration={200}>
+        <div className="grid grid-cols-7 gap-1">
         {/* Week day headers */}
         {weekDays.map((day) => (
           <div
@@ -163,16 +238,17 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
           const isTodayDate = isToday(day);
 
           return (
-            <div
-              key={idx}
-              onClick={() => isCurrentMonth && onDayClick?.(day)}
-              className={cn(
-                'min-h-[80px] border rounded-lg p-1 relative transition-all',
-                !isCurrentMonth && 'bg-muted/30',
-                isTodayDate && 'ring-2 ring-primary',
-                isCurrentMonth && onDayClick && 'cursor-pointer hover:bg-accent hover:shadow-md'
-              )}
-            >
+            <Tooltip key={idx}>
+              <TooltipTrigger asChild>
+                <div
+                  onClick={() => isCurrentMonth && onDayClick?.(day)}
+                  className={cn(
+                    'min-h-[80px] border rounded-lg p-1 relative transition-all',
+                    !isCurrentMonth && 'bg-muted/30',
+                    isTodayDate && 'ring-2 ring-primary',
+                    isCurrentMonth && onDayClick && 'cursor-pointer hover:bg-accent hover:shadow-md'
+                  )}
+                >
               <div className={cn(
                 'text-xs font-medium mb-1',
                 !isCurrentMonth && 'text-muted-foreground',
@@ -215,10 +291,16 @@ export function MonthlyAvailabilityCalendar({ professionals, appointments, onDay
                   {busyProfessionals.length > 0 && `${busyProfessionals.length} ocupado`}
                 </div>
               )}
-            </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm">
+                {generateTooltipContent(day)}
+              </TooltipContent>
+            </Tooltip>
           );
         })}
-      </div>
+        </div>
+      </TooltipProvider>
     </Card>
   );
 }
