@@ -1,10 +1,11 @@
 import { format, isToday, parseISO, differenceInMinutes, differenceInHours, isPast, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer, CalendarCheck, Timer } from 'lucide-react';
+import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer, CalendarCheck, Timer, TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 
@@ -129,6 +130,45 @@ export function CompactAppointmentList({
   };
 
   const nextAppointment = getNextTodayAppointment();
+
+  // Calculate day occupation statistics
+  const getDayOccupationStats = () => {
+    const workDayStart = 8; // 08:00
+    const workDayEnd = 18; // 18:00
+    const totalWorkMinutes = (workDayEnd - workDayStart) * 60; // 600 minutes (10 hours)
+
+    const occupiedMinutes = todayAppointments
+      .filter(apt => apt.status !== 'cancelled')
+      .reduce((total, apt) => total + (apt.duration || 0), 0);
+
+    const occupationPercentage = Math.round((occupiedMinutes / totalWorkMinutes) * 100);
+    const freeMinutes = totalWorkMinutes - occupiedMinutes;
+
+    const completedAppointments = todayAppointments.filter(apt => apt.status === 'completed').length;
+    const pendingAppointments = todayAppointments.filter(
+      apt => apt.status === 'scheduled' || apt.status === 'confirmed'
+    ).length;
+
+    return {
+      totalWorkMinutes,
+      occupiedMinutes,
+      freeMinutes,
+      occupationPercentage: Math.min(occupationPercentage, 100),
+      completedAppointments,
+      pendingAppointments,
+      totalAppointments: todayAppointments.length,
+    };
+  };
+
+  const stats = getDayOccupationStats();
+
+  const formatMinutesToHours = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins}min`;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}min`;
+  };
 
   // Group other appointments by date
   const groupedAppointments = otherAppointments.reduce((groups, appointment) => {
@@ -290,6 +330,47 @@ export function CompactAppointmentList({
               </Badge>
             </div>
             
+            {/* Day Occupation Graph */}
+            <div className="mt-3 pt-3 border-t border-primary/20 space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary">Ocupação do Dia</span>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-primary/70">
+                    {formatMinutesToHours(stats.occupiedMinutes)} ocupado
+                  </span>
+                  <span className="font-bold text-primary">
+                    {stats.occupationPercentage}%
+                  </span>
+                </div>
+                <Progress value={stats.occupationPercentage} className="h-2" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-background/50 rounded p-1.5 text-center">
+                  <p className="text-xs text-muted-foreground">Livres</p>
+                  <p className="text-sm font-semibold text-primary">
+                    {formatMinutesToHours(stats.freeMinutes)}
+                  </p>
+                </div>
+                <div className="bg-background/50 rounded p-1.5 text-center">
+                  <p className="text-xs text-muted-foreground">Pendentes</p>
+                  <p className="text-sm font-semibold text-orange-600">
+                    {stats.pendingAppointments}
+                  </p>
+                </div>
+                <div className="bg-background/50 rounded p-1.5 text-center">
+                  <p className="text-xs text-muted-foreground">Concluídos</p>
+                  <p className="text-sm font-semibold text-green-600">
+                    {stats.completedAppointments}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Next Appointment Countdown */}
             {nextAppointment && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-primary/20">
