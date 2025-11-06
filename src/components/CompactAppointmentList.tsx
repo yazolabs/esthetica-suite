@@ -1,6 +1,6 @@
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer } from 'lucide-react';
+import { Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, Printer, CalendarCheck } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -84,8 +84,12 @@ export function CompactAppointmentList({
     return a.time.localeCompare(b.time);
   });
 
-  // Group appointments by date
-  const groupedAppointments = sortedAppointments.reduce((groups, appointment) => {
+  // Separate today's appointments from others
+  const todayAppointments = sortedAppointments.filter(apt => isToday(parseISO(apt.date)));
+  const otherAppointments = sortedAppointments.filter(apt => !isToday(parseISO(apt.date)));
+
+  // Group other appointments by date
+  const groupedAppointments = otherAppointments.reduce((groups, appointment) => {
     const date = appointment.date;
     if (!groups[date]) {
       groups[date] = [];
@@ -101,140 +105,184 @@ export function CompactAppointmentList({
       .join(', ');
   };
 
-  return (
-    <div className="space-y-4">
-      {Object.entries(groupedAppointments).map(([date, dayAppointments]) => (
-        <div key={date}>
-          {/* Date Header */}
-          <div className="sticky top-0 bg-background z-10 pb-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {format(new Date(date), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-            </h3>
-            <Separator className="mt-2" />
+  const renderAppointmentCard = (appointment: Appointment, isToday = false) => (
+    <Card 
+      key={appointment.id} 
+      className={cn(
+        'p-3 transition-all',
+        isToday && 'border-primary bg-primary/5 shadow-md'
+      )}
+    >
+      <div className="space-y-2">
+        {/* Header with time and status */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Clock className={cn('h-4 w-4 flex-shrink-0', isToday ? 'text-primary' : 'text-muted-foreground')} />
+            <span className={cn('font-semibold text-base', isToday && 'text-primary')}>{appointment.time}</span>
+            {appointment.duration && (
+              <span className="text-xs text-muted-foreground">
+                ({appointment.duration}min)
+              </span>
+            )}
           </div>
+          <Badge
+            variant="outline"
+            className={cn('text-xs', getStatusColor(appointment.status))}
+          >
+            {getStatusLabel(appointment.status)}
+          </Badge>
+        </div>
 
-          {/* Appointments for this date */}
-          <div className="space-y-2">
-            {dayAppointments.map((appointment) => (
-              <Card key={appointment.id} className="p-3">
-                <div className="space-y-2">
-                  {/* Header with time and status */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-semibold text-base">{appointment.time}</span>
-                      {appointment.duration && (
-                        <span className="text-xs text-muted-foreground">
-                          ({appointment.duration}min)
-                        </span>
-                      )}
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn('text-xs', getStatusColor(appointment.status))}
-                    >
-                      {getStatusLabel(appointment.status)}
-                    </Badge>
-                  </div>
-
-                  {/* Client info */}
-                  <div className="flex items-start gap-2">
-                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{appointment.client}</p>
-                      {appointment.clientPhone && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">{appointment.clientPhone}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Service */}
-                  <div className="flex items-start gap-2">
-                    <Scissors className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <p className="text-sm">{appointment.service}</p>
-                  </div>
-
-                  {/* Professionals */}
-                  <div className="flex items-start gap-2">
-                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-muted-foreground">
-                      {getProfessionalNames(appointment.professionals)}
-                    </p>
-                  </div>
-
-                  {/* Price */}
-                  {appointment.price !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <p className="text-sm font-medium">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(appointment.price)}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {appointment.notes && (
-                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                      {appointment.notes}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-1 pt-2 border-t">
-                    {onPrint && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onPrint(appointment)}
-                        className="flex-1"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {(appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
-                      onCheckout && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onCheckout(appointment)}
-                          className="flex-1 text-green-600 hover:text-green-700"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                        </Button>
-                      )}
-                    {canEdit && onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(appointment)}
-                        className="flex-1"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {canDelete && onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(appointment.id)}
-                        className="flex-1 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
+        {/* Client info */}
+        <div className="flex items-start gap-2">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate">{appointment.client}</p>
+            {appointment.clientPhone && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Phone className="h-3 w-3 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{appointment.clientPhone}</p>
+              </div>
+            )}
           </div>
         </div>
-      ))}
+
+        {/* Service */}
+        <div className="flex items-start gap-2">
+          <Scissors className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-sm">{appointment.service}</p>
+        </div>
+
+        {/* Professionals */}
+        <div className="flex items-start gap-2">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-muted-foreground">
+            {getProfessionalNames(appointment.professionals)}
+          </p>
+        </div>
+
+        {/* Price */}
+        {appointment.price !== undefined && (
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <p className="text-sm font-medium">
+              {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(appointment.price)}
+            </p>
+          </div>
+        )}
+
+        {/* Notes */}
+        {appointment.notes && (
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+            {appointment.notes}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-1 pt-2 border-t">
+          {onPrint && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onPrint(appointment)}
+              className="flex-1"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+          )}
+          {(appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
+            onCheckout && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCheckout(appointment)}
+                className="flex-1 text-green-600 hover:text-green-700"
+              >
+                <DollarSign className="h-4 w-4" />
+              </Button>
+            )}
+          {canEdit && onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(appointment)}
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {canDelete && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(appointment.id)}
+              className="flex-1 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Today's Appointments Section */}
+      {todayAppointments.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border-2 border-primary/20">
+            <CalendarCheck className="h-5 w-5 text-primary" />
+            <div>
+              <h3 className="text-base font-bold text-primary">Agendamentos de Hoje</h3>
+              <p className="text-xs text-primary/70">
+                {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </p>
+            </div>
+            <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
+              {todayAppointments.length}
+            </Badge>
+          </div>
+          
+          <div className="space-y-2">
+            {todayAppointments.map((appointment) => renderAppointmentCard(appointment, true))}
+          </div>
+        </div>
+      )}
+
+      {/* Future Appointments */}
+      {Object.keys(groupedAppointments).length > 0 && (
+        <div className="space-y-4">
+          {todayAppointments.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Próximos Agendamentos
+              </h3>
+            </>
+          )}
+          
+          {Object.entries(groupedAppointments).map(([date, dayAppointments]) => (
+            <div key={date}>
+              {/* Date Header */}
+              <div className="sticky top-0 bg-background z-10 pb-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {format(parseISO(date), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                </h3>
+                <Separator className="mt-2" />
+              </div>
+
+              {/* Appointments for this date */}
+              <div className="space-y-2">
+                {dayAppointments.map((appointment) => renderAppointmentCard(appointment, false))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {sortedAppointments.length === 0 && (
         <Card className="p-8 text-center">
