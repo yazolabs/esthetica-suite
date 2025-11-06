@@ -51,6 +51,19 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+interface OpenWindow {
+  id: string;
+  date_start: string;
+  date_end: string;
+  status: 'open' | 'closed';
+}
+
+interface Professional {
+  id: string;
+  name: string;
+  openWindows?: OpenWindow[];
+}
+
 interface Appointment {
   id: string;
   client: string;
@@ -78,9 +91,22 @@ const appointmentSchema = z.object({
   price: z.coerce.number().min(0, 'Preço inválido').optional(),
 });
 
-const mockProfessionals = [
-  { id: '1', name: 'Maria Santos' },
-  { id: '2', name: 'João Pedro' },
+const mockProfessionals: Professional[] = [
+  { 
+    id: '1', 
+    name: 'Maria Santos',
+    openWindows: [
+      { id: '1', date_start: '2025-11-10', date_end: '2025-11-20', status: 'open' },
+      { id: '2', date_start: '2025-12-01', date_end: '2025-12-15', status: 'open' },
+    ]
+  },
+  { 
+    id: '2', 
+    name: 'João Pedro',
+    openWindows: [
+      { id: '3', date_start: '2025-11-15', date_end: '2025-11-30', status: 'open' },
+    ]
+  },
   { id: '3', name: 'Paula Costa' },
   { id: '4', name: 'Rita Moura' },
 ];
@@ -847,9 +873,28 @@ export default function Appointments() {
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) =>
-                              date < new Date(new Date().setHours(0, 0, 0, 0))
-                            }
+                            disabled={(date) => {
+                              const today = new Date(new Date().setHours(0, 0, 0, 0));
+                              if (date < today) return true;
+
+                              const selectedProfessionals = form.watch('professionals') || [];
+                              if (selectedProfessionals.length === 0) return false;
+
+                              const professionalsWithWindows = mockProfessionals.filter(
+                                p => selectedProfessionals.includes(p.id) && p.openWindows && p.openWindows.length > 0
+                              );
+
+                              if (professionalsWithWindows.length === 0) return false;
+
+                              const dateStr = format(date, 'yyyy-MM-dd');
+                              
+                              return !professionalsWithWindows.every(professional => {
+                                return professional.openWindows!.some(window => {
+                                  if (window.status !== 'open') return false;
+                                  return dateStr >= window.date_start && dateStr <= window.date_end;
+                                });
+                              });
+                            }}
                             locale={ptBR}
                             initialFocus
                           />
