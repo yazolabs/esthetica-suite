@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer, Table, List } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, Calendar as CalendarIcon, Printer, Table, List, Users } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import { AppointmentCheckoutDialog } from '@/components/AppointmentCheckoutDialog';
 import { MonthlyAvailabilityCalendar } from '@/components/MonthlyAvailabilityCalendar';
 import { CompactAppointmentList } from '@/components/CompactAppointmentList';
+import { ProfessionalDailyView } from '@/components/ProfessionalDailyView';
 import {
   Dialog,
   DialogContent,
@@ -267,7 +268,7 @@ export default function Appointments() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'list'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'list' | 'professional'>('table');
   const { can } = usePermission();
 
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -824,6 +825,15 @@ export default function Appointments() {
               <span className="md:inline">Lista</span>
             </Button>
             <Button
+              variant={viewMode === 'professional' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('professional')}
+              className="text-xs md:text-sm flex-1 md:flex-none"
+            >
+              <Users className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="md:inline">Profissionais</span>
+            </Button>
+            <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
@@ -851,6 +861,17 @@ export default function Appointments() {
         />
       ) : viewMode === 'list' ? (
         <CompactAppointmentList
+          appointments={appointments}
+          professionals={mockProfessionals}
+          onEdit={canEdit ? handleOpenDialog : undefined}
+          onDelete={canDelete ? handleDelete : undefined}
+          onCheckout={canEdit ? handleCheckout : undefined}
+          onPrint={printAppointmentReceipt}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
+      ) : viewMode === 'professional' ? (
+        <ProfessionalDailyView
           appointments={appointments}
           professionals={mockProfessionals}
           onEdit={canEdit ? handleOpenDialog : undefined}
