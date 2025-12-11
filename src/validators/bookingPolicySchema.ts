@@ -92,12 +92,12 @@ export const defaultBookingParams: BookingParams = {
   },
 };
 
-export const defaultBookingPolicy: Partial<BookingPolicy> = {
-  scope_type: "company",
-  scope_id: null,
+export const defaultBookingPolicy = {
+  scope_type: "company" as const,
+  scope_id: null as number | null | undefined,
   priority: 100,
-  effective_from: null,
-  effective_to: null,
+  effective_from: null as string | null | undefined,
+  effective_to: null as string | null | undefined,
   active: true,
   params: defaultBookingParams,
 };
