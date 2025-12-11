@@ -17,6 +17,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     { screen: 'item-prices', actions: ['view', 'create', 'edit', 'delete'] },
     { screen: 'item-price-histories', actions: ['view'] },
     { screen: 'promotions', actions: ['view', 'create', 'edit', 'delete'] },
+    { screen: 'booking-policies', actions: ['view', 'create', 'edit', 'delete'] },
   ],
   manager: [
     { screen: 'dashboard', actions: ['view'] },
@@ -32,6 +33,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     { screen: 'item-prices', actions: ['view', 'edit'] },
     { screen: 'item-price-histories', actions: ['view'] },
     { screen: 'promotions', actions: ['view', 'create', 'edit'] },
+    { screen: 'booking-policies', actions: ['view', 'create', 'edit'] },
   ],
   professional: [
     { screen: 'dashboard', actions: ['view'] },
