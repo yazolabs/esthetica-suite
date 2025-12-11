@@ -15,6 +15,7 @@ import {
   Store,
   FileText,
   Percent,
+  CalendarCog,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -83,6 +84,12 @@ const navSections: NavSection[] = [
     label: 'Marketing',
     items: [
       { title: 'Promoções', url: '/promotions', icon: Megaphone, screen: 'promotions' },
+    ],
+  },
+  {
+    label: 'Configurações',
+    items: [
+      { title: 'Políticas de Agendamento', url: '/booking-policies', icon: CalendarCog, screen: 'booking-policies' },
     ],
   },
 ];

@@ -14,7 +14,8 @@ export type Screen =
   | 'customers'
   | 'suppliers'
   | 'accounts-payable'
-  | 'commissions';
+  | 'commissions'
+  | 'booking-policies';
 
 export type Action = 'view' | 'create' | 'edit' | 'delete';
 

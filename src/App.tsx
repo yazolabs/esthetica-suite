@@ -22,6 +22,7 @@ const Promotions = lazy(() => import("./pages/Promotions"));
 const Suppliers = lazy(() => import("./pages/Suppliers"));
 const AccountsPayable = lazy(() => import("./pages/AccountsPayable"));
 const Commissions = lazy(() => import("./pages/Commissions"));
+const BookingPolicies = lazy(() => import("./pages/BookingPolicies"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -183,6 +184,16 @@ const App = () => (
                 <ProtectedRoute screen="commissions">
                   <SidebarLayout>
                     <Commissions />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/booking-policies"
+              element={
+                <ProtectedRoute screen="booking-policies">
+                  <SidebarLayout>
+                    <BookingPolicies />
                   </SidebarLayout>
                 </ProtectedRoute>
               }
