@@ -269,6 +269,7 @@ export default function Appointments() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'list' | 'professional'>('table');
+  const [professionalViewDate, setProfessionalViewDate] = useState<Date>(new Date());
   const { can } = usePermission();
 
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -874,6 +875,8 @@ export default function Appointments() {
         <ProfessionalDailyView
           appointments={appointments}
           professionals={mockProfessionals}
+          selectedDate={professionalViewDate}
+          onDateChange={setProfessionalViewDate}
           onEdit={canEdit ? handleOpenDialog : undefined}
           onDelete={canDelete ? handleDelete : undefined}
           onCheckout={canEdit ? handleCheckout : undefined}
