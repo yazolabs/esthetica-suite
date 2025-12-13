@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, 
-  Printer, ChevronDown, ChevronUp, Calendar, Users
+  Printer, ChevronDown, ChevronUp, Calendar, Users, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
 interface Appointment {
@@ -40,6 +46,8 @@ interface Professional {
 interface ProfessionalDailyViewProps {
   appointments: Appointment[];
   professionals: Professional[];
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
   onEdit?: (appointment: Appointment) => void;
   onDelete?: (id: string) => void;
   onCheckout?: (appointment: Appointment) => void;
@@ -71,6 +79,8 @@ const getStatusLabel = (status: string) => {
 export function ProfessionalDailyView({
   appointments,
   professionals,
+  selectedDate,
+  onDateChange,
   onEdit,
   onDelete,
   onCheckout,
@@ -80,14 +90,15 @@ export function ProfessionalDailyView({
 }: ProfessionalDailyViewProps) {
   const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null);
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const isTodaySelected = isToday(selectedDate);
   
-  // Filter today's appointments
-  const todayAppointments = appointments.filter(apt => apt.date === today);
+  // Filter appointments for selected date
+  const dayAppointments = appointments.filter(apt => apt.date === dateStr);
 
-  // Get appointments per professional for today
+  // Get appointments per professional for selected date
   const getProfessionalAppointments = (professionalId: string) => {
-    return todayAppointments
+    return dayAppointments
       .filter(apt => apt.professionals.includes(professionalId))
       .sort((a, b) => a.time.localeCompare(b.time));
   };
@@ -139,18 +150,58 @@ export function ProfessionalDailyView({
     setExpandedProfessional(expandedProfessional === id ? null : id);
   };
 
+  const handlePreviousDay = () => onDateChange(subDays(selectedDate, 1));
+  const handleNextDay = () => onDateChange(addDays(selectedDate, 1));
+  const handleToday = () => onDateChange(new Date());
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg border border-primary/20">
-        <Calendar className="h-5 w-5 text-primary" />
-        <div>
-          <h2 className="font-semibold text-primary">
-            Agenda do Dia - {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {todayAppointments.length} agendamentos • {professionals.length} profissionais
-          </p>
+      {/* Header with Date Navigation */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-primary/10 rounded-lg border border-primary/20">
+        <div className="flex items-center gap-3">
+          <Calendar className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="font-semibold text-primary">
+              Agenda do Dia - {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {dayAppointments.length} agendamento{dayAppointments.length !== 1 ? 's' : ''} • {professionals.length} profissiona{professionals.length !== 1 ? 'is' : 'l'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Date Navigation */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handlePreviousDay} title="Dia anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="min-w-[120px]">
+                {isTodaySelected ? 'Hoje' : format(selectedDate, 'dd/MM/yyyy')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <CalendarPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && onDateChange(date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button variant="outline" size="icon" onClick={handleNextDay} title="Próximo dia">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          {!isTodaySelected && (
+            <Button variant="secondary" size="sm" onClick={handleToday}>
+              Hoje
+            </Button>
+          )}
         </div>
       </div>
 
