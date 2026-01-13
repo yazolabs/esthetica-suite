@@ -170,6 +170,192 @@ const mockAppointments: Appointment[] = [
     status: 'scheduled',
     price: 120
   },
+  // January 2026 appointments for professional view
+  { 
+    id: '5', 
+    client: 'Fernanda Oliveira', 
+    clientPhone: '(11) 99876-5432',
+    service: 'Corte Feminino', 
+    professionals: ['1'], 
+    date: '2026-01-13', 
+    time: '09:00', 
+    duration: 60,
+    status: 'scheduled',
+    price: 80
+  },
+  { 
+    id: '6', 
+    client: 'Pedro Henrique', 
+    clientPhone: '(11) 98765-1234',
+    service: 'Corte Masculino', 
+    professionals: ['1'], 
+    date: '2026-01-13', 
+    time: '10:30', 
+    duration: 45,
+    status: 'confirmed',
+    price: 50
+  },
+  { 
+    id: '7', 
+    client: 'Mariana Costa', 
+    service: 'Coloração', 
+    professionals: ['2'], 
+    date: '2026-01-13', 
+    time: '09:00', 
+    duration: 120,
+    status: 'scheduled',
+    price: 200
+  },
+  { 
+    id: '8', 
+    client: 'Lucas Mendes', 
+    clientPhone: '(11) 97654-3210',
+    service: 'Massagem', 
+    professionals: ['3'], 
+    date: '2026-01-13', 
+    time: '14:00', 
+    duration: 90,
+    status: 'confirmed',
+    price: 120
+  },
+  { 
+    id: '9', 
+    client: 'Juliana Pereira', 
+    service: 'Manicure', 
+    professionals: ['4'], 
+    date: '2026-01-13', 
+    time: '11:00', 
+    duration: 30,
+    status: 'completed',
+    price: 35
+  },
+  { 
+    id: '10', 
+    client: 'Roberto Almeida', 
+    clientPhone: '(11) 96543-2109',
+    service: 'Corte Masculino', 
+    professionals: ['1'], 
+    date: '2026-01-14', 
+    time: '09:00', 
+    duration: 45,
+    status: 'scheduled',
+    price: 50
+  },
+  { 
+    id: '11', 
+    client: 'Camila Santos', 
+    service: 'Pedicure', 
+    professionals: ['2'], 
+    date: '2026-01-14', 
+    time: '10:00', 
+    duration: 45,
+    status: 'confirmed',
+    price: 45
+  },
+  { 
+    id: '12', 
+    client: 'André Ferreira', 
+    clientPhone: '(11) 95432-1098',
+    service: 'Massagem', 
+    professionals: ['3'], 
+    date: '2026-01-14', 
+    time: '11:00', 
+    duration: 90,
+    status: 'scheduled',
+    price: 120
+  },
+  { 
+    id: '13', 
+    client: 'Patrícia Lima', 
+    service: 'Coloração', 
+    professionals: ['1'], 
+    date: '2026-01-14', 
+    time: '14:00', 
+    duration: 120,
+    status: 'scheduled',
+    price: 200
+  },
+  { 
+    id: '14', 
+    client: 'Thiago Nascimento', 
+    clientPhone: '(11) 94321-0987',
+    service: 'Corte Masculino', 
+    professionals: ['2'], 
+    date: '2026-01-14', 
+    time: '15:00', 
+    duration: 45,
+    status: 'confirmed',
+    price: 50
+  },
+  { 
+    id: '15', 
+    client: 'Isabela Rodrigues', 
+    service: 'Corte Feminino', 
+    professionals: ['1'], 
+    date: '2026-01-15', 
+    time: '09:30', 
+    duration: 60,
+    status: 'scheduled',
+    price: 80
+  },
+  { 
+    id: '16', 
+    client: 'Gabriel Souza', 
+    clientPhone: '(11) 93210-9876',
+    service: 'Corte Masculino', 
+    professionals: ['2'], 
+    date: '2026-01-15', 
+    time: '09:00', 
+    duration: 45,
+    status: 'confirmed',
+    price: 50
+  },
+  { 
+    id: '17', 
+    client: 'Amanda Carvalho', 
+    service: 'Manicure', 
+    professionals: ['4'], 
+    date: '2026-01-15', 
+    time: '10:00', 
+    duration: 30,
+    status: 'scheduled',
+    price: 35
+  },
+  { 
+    id: '18', 
+    client: 'Bruno Martins', 
+    clientPhone: '(11) 92109-8765',
+    service: 'Massagem', 
+    professionals: ['3'], 
+    date: '2026-01-15', 
+    time: '14:00', 
+    duration: 90,
+    status: 'scheduled',
+    price: 120
+  },
+  { 
+    id: '19', 
+    client: 'Letícia Dias', 
+    service: 'Pedicure', 
+    professionals: ['4'], 
+    date: '2026-01-15', 
+    time: '11:00', 
+    duration: 45,
+    status: 'confirmed',
+    price: 45
+  },
+  { 
+    id: '20', 
+    client: 'Rafael Moreira', 
+    clientPhone: '(11) 91098-7654',
+    service: 'Coloração', 
+    professionals: ['1'], 
+    date: '2026-01-15', 
+    time: '14:00', 
+    duration: 120,
+    status: 'scheduled',
+    price: 200
+  },
 ];
 
 // Generate time slots (every 30 minutes from 08:00 to 18:00)
@@ -269,7 +455,96 @@ export default function Appointments() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'list' | 'professional'>('table');
-  const [professionalViewDate, setProfessionalViewDate] = useState<Date>(new Date());
+  const [professionalViewDate, setProfessionalViewDate] = useState<Date>(new Date(2026, 0, 13)); // Start at Jan 13, 2026
+
+  // Quick status update handler
+  const handleQuickStatusChange = (appointmentId: string, newStatus: Appointment['status']) => {
+    setAppointments(appointments.map(apt => 
+      apt.id === appointmentId 
+        ? { ...apt, status: newStatus }
+        : apt
+    ));
+    toast({
+      title: 'Status atualizado',
+      description: `Status alterado para ${getStatusLabel(newStatus)}.`,
+    });
+  };
+
+  // Quick time update handler with conflict check
+  const handleQuickTimeChange = (
+    appointmentId: string, 
+    newTime: string, 
+    onConflict: (availableSlots: string[]) => void
+  ) => {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+
+    const isAvailable = isTimeSlotAvailable(
+      appointments,
+      new Date(appointment.date),
+      newTime,
+      appointment.duration || 30,
+      appointment.professionals,
+      appointmentId
+    );
+
+    if (isAvailable) {
+      setAppointments(appointments.map(apt => 
+        apt.id === appointmentId 
+          ? { ...apt, time: newTime }
+          : apt
+      ));
+      toast({
+        title: 'Horário atualizado',
+        description: `Horário alterado para ${newTime}.`,
+      });
+    } else {
+      // Get available slots for conflict resolution
+      const availableSlots = getAvailableTimeSlots(
+        appointments,
+        new Date(appointment.date),
+        appointment.professionals,
+        appointment.duration || 30,
+        appointmentId
+      );
+      onConflict(availableSlots);
+    }
+  };
+
+  // Reassign appointment to another professional
+  const handleReassignProfessional = (
+    appointmentId: string, 
+    newProfessionalId: string,
+    onConflict: () => void
+  ) => {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+
+    // Check if the new professional has a conflict at this time
+    const isAvailable = isTimeSlotAvailable(
+      appointments,
+      new Date(appointment.date),
+      appointment.time,
+      appointment.duration || 30,
+      [newProfessionalId],
+      appointmentId
+    );
+
+    if (isAvailable) {
+      setAppointments(appointments.map(apt => 
+        apt.id === appointmentId 
+          ? { ...apt, professionals: [newProfessionalId] }
+          : apt
+      ));
+      const newProfName = mockProfessionals.find(p => p.id === newProfessionalId)?.name;
+      toast({
+        title: 'Profissional alterado',
+        description: `Agendamento transferido para ${newProfName}.`,
+      });
+    } else {
+      onConflict();
+    }
+  };
   const { can } = usePermission();
 
   const form = useForm<z.infer<typeof appointmentSchema>>({
@@ -881,6 +1156,9 @@ export default function Appointments() {
           onDelete={canDelete ? handleDelete : undefined}
           onCheckout={canEdit ? handleCheckout : undefined}
           onPrint={printAppointmentReceipt}
+          onQuickStatusChange={canEdit ? handleQuickStatusChange : undefined}
+          onQuickTimeChange={canEdit ? handleQuickTimeChange : undefined}
+          onReassignProfessional={canEdit ? handleReassignProfessional : undefined}
           canEdit={canEdit}
           canDelete={canDelete}
         />
