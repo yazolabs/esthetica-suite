@@ -128,7 +128,7 @@ export function ProfessionalDailyView({
   canEdit,
   canDelete,
 }: ProfessionalDailyViewProps) {
-  const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null);
+  const [expandedProfessionals, setExpandedProfessionals] = useState<Set<string>>(new Set());
   const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
   const [dragOverProfessional, setDragOverProfessional] = useState<string | null>(null);
   
@@ -139,12 +139,14 @@ export function ProfessionalDailyView({
     availableSlots: string[];
   }>({ open: false, appointmentId: '', availableSlots: [] });
   
-  // Professional conflict dialog state
+  // Professional conflict dialog state with available slots
   const [professionalConflictDialog, setProfessionalConflictDialog] = useState<{
     open: boolean;
     appointmentId: string;
+    targetProfessionalId: string;
     targetProfessionalName: string;
-  }>({ open: false, appointmentId: '', targetProfessionalName: '' });
+    availableSlots: string[];
+  }>({ open: false, appointmentId: '', targetProfessionalId: '', targetProfessionalName: '', availableSlots: [] });
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const isTodaySelected = isToday(selectedDate);
@@ -200,7 +202,15 @@ export function ProfessionalDailyView({
   };
 
   const toggleProfessional = (id: string) => {
-    setExpandedProfessional(expandedProfessional === id ? null : id);
+    setExpandedProfessionals(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handlePreviousDay = () => onDateChange(subDays(selectedDate, 1));
@@ -231,6 +241,29 @@ export function ProfessionalDailyView({
     setDragOverProfessional(null);
   };
 
+  // Get available time slots for a professional on the selected date
+  const getAvailableSlotsForProfessional = (professionalId: string, excludeAppointmentId?: string): string[] => {
+    const profAppointments = dayAppointments.filter(
+      apt => apt.professionals.includes(professionalId) && 
+             apt.id !== excludeAppointmentId &&
+             apt.status !== 'cancelled'
+    );
+
+    return allTimeSlots.filter(slot => {
+      const [hours, minutes] = slot.split(':').map(Number);
+      const slotStart = hours * 60 + minutes;
+      const slotEnd = slotStart + (draggedAppointment?.duration || 30);
+
+      return profAppointments.every(apt => {
+        const [aptHours, aptMinutes] = apt.time.split(':').map(Number);
+        const aptStart = aptHours * 60 + aptMinutes;
+        const aptEnd = aptStart + (apt.duration || 30);
+
+        return slotEnd <= aptStart || slotStart >= aptEnd;
+      });
+    });
+  };
+
   const handleDrop = (e: React.DragEvent, targetProfessionalId: string) => {
     e.preventDefault();
     setDragOverProfessional(null);
@@ -244,21 +277,56 @@ export function ProfessionalDailyView({
     }
 
     const targetProfName = professionals.find(p => p.id === targetProfessionalId)?.name || '';
+    const availableSlots = getAvailableSlotsForProfessional(targetProfessionalId, draggedAppointment.id);
     
     onReassignProfessional(
       draggedAppointment.id,
       targetProfessionalId,
       () => {
-        // Conflict callback - show dialog
+        // Conflict callback - show dialog with available slots
         setProfessionalConflictDialog({
           open: true,
           appointmentId: draggedAppointment.id,
+          targetProfessionalId,
           targetProfessionalName: targetProfName,
+          availableSlots,
         });
       }
     );
     
     setDraggedAppointment(null);
+  };
+
+  // Handle selecting a new time when there's a professional reassignment conflict
+  const handleProfessionalConflictTimeSelect = (newTime: string) => {
+    if (!onQuickTimeChange) return;
+
+    // First update the time
+    onQuickTimeChange(
+      professionalConflictDialog.appointmentId,
+      newTime,
+      () => {} // Should not have conflict since we're selecting from available slots
+    );
+    
+    // Then reassign to the new professional
+    if (onReassignProfessional) {
+      // Small delay to allow time update to complete
+      setTimeout(() => {
+        onReassignProfessional(
+          professionalConflictDialog.appointmentId,
+          professionalConflictDialog.targetProfessionalId,
+          () => {} // Should not conflict now
+        );
+      }, 100);
+    }
+    
+    setProfessionalConflictDialog({ 
+      open: false, 
+      appointmentId: '', 
+      targetProfessionalId: '',
+      targetProfessionalName: '', 
+      availableSlots: [] 
+    });
   };
 
   // Quick time change with conflict handling
@@ -348,7 +416,7 @@ export function ProfessionalDailyView({
         {professionals.map((professional) => {
           const stats = getProfessionalStats(professional.id);
           const profAppointments = getProfessionalAppointments(professional.id);
-          const isExpanded = expandedProfessional === professional.id;
+          const isExpanded = expandedProfessionals.has(professional.id);
           const isDragOver = dragOverProfessional === professional.id;
 
           return (
@@ -695,7 +763,13 @@ export function ProfessionalDailyView({
       {/* Professional Conflict Dialog */}
       <Dialog 
         open={professionalConflictDialog.open} 
-        onOpenChange={(open) => !open && setProfessionalConflictDialog({ open: false, appointmentId: '', targetProfessionalName: '' })}
+        onOpenChange={(open) => !open && setProfessionalConflictDialog({ 
+          open: false, 
+          appointmentId: '', 
+          targetProfessionalId: '',
+          targetProfessionalName: '', 
+          availableSlots: [] 
+        })}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -705,15 +779,43 @@ export function ProfessionalDailyView({
             </DialogTitle>
             <DialogDescription>
               {professionalConflictDialog.targetProfessionalName} já possui um agendamento neste horário. 
-              Escolha outro horário ou profissional.
+              Escolha um horário disponível para mover o agendamento:
             </DialogDescription>
           </DialogHeader>
+          <div className="py-4">
+            {professionalConflictDialog.availableSlots.length > 0 ? (
+              <ScrollArea className="h-48">
+                <div className="grid grid-cols-3 gap-2">
+                  {professionalConflictDialog.availableSlots.map((slot) => (
+                    <Button
+                      key={slot}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleProfessionalConflictTimeSelect(slot)}
+                    >
+                      {slot}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhum horário disponível para este profissional hoje.
+              </p>
+            )}
+          </div>
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setProfessionalConflictDialog({ open: false, appointmentId: '', targetProfessionalName: '' })}
+              onClick={() => setProfessionalConflictDialog({ 
+                open: false, 
+                appointmentId: '', 
+                targetProfessionalId: '',
+                targetProfessionalName: '', 
+                availableSlots: [] 
+              })}
             >
-              Entendi
+              Cancelar
             </Button>
           </DialogFooter>
         </DialogContent>
