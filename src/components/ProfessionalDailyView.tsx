@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { format, isToday, parseISO, addDays, subDays } from 'date-fns';
+import { format, isToday, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Clock, User, Scissors, Phone, DollarSign, Edit, Trash2, 
-  Printer, ChevronDown, ChevronUp, Calendar, Users, ChevronLeft, ChevronRight
+  Printer, ChevronDown, ChevronUp, Calendar, Users, ChevronLeft, ChevronRight,
+  GripVertical, AlertCircle
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +22,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface Appointment {
   id: string;
@@ -52,6 +69,9 @@ interface ProfessionalDailyViewProps {
   onDelete?: (id: string) => void;
   onCheckout?: (appointment: Appointment) => void;
   onPrint?: (appointment: Appointment) => void;
+  onQuickStatusChange?: (appointmentId: string, newStatus: Appointment['status']) => void;
+  onQuickTimeChange?: (appointmentId: string, newTime: string, onConflict: (availableSlots: string[]) => void) => void;
+  onReassignProfessional?: (appointmentId: string, newProfessionalId: string, onConflict: () => void) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
@@ -76,6 +96,23 @@ const getStatusLabel = (status: string) => {
   }
 };
 
+const statusOptions: Appointment['status'][] = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+
+// Generate time slots (every 30 minutes from 08:00 to 18:00)
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 18; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      if (hour === 18 && minute > 0) break;
+      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(timeStr);
+    }
+  }
+  return slots;
+};
+
+const allTimeSlots = generateTimeSlots();
+
 export function ProfessionalDailyView({
   appointments,
   professionals,
@@ -85,25 +122,41 @@ export function ProfessionalDailyView({
   onDelete,
   onCheckout,
   onPrint,
+  onQuickStatusChange,
+  onQuickTimeChange,
+  onReassignProfessional,
   canEdit,
   canDelete,
 }: ProfessionalDailyViewProps) {
   const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null);
+  const [draggedAppointment, setDraggedAppointment] = useState<Appointment | null>(null);
+  const [dragOverProfessional, setDragOverProfessional] = useState<string | null>(null);
+  
+  // Time conflict dialog state
+  const [timeConflictDialog, setTimeConflictDialog] = useState<{
+    open: boolean;
+    appointmentId: string;
+    availableSlots: string[];
+  }>({ open: false, appointmentId: '', availableSlots: [] });
+  
+  // Professional conflict dialog state
+  const [professionalConflictDialog, setProfessionalConflictDialog] = useState<{
+    open: boolean;
+    appointmentId: string;
+    targetProfessionalName: string;
+  }>({ open: false, appointmentId: '', targetProfessionalName: '' });
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const isTodaySelected = isToday(selectedDate);
   
-  // Filter appointments for selected date
   const dayAppointments = appointments.filter(apt => apt.date === dateStr);
 
-  // Get appointments per professional for selected date
   const getProfessionalAppointments = (professionalId: string) => {
     return dayAppointments
       .filter(apt => apt.professionals.includes(professionalId))
       .sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Get stats for a professional
   const getProfessionalStats = (professionalId: string) => {
     const profAppointments = getProfessionalAppointments(professionalId);
     const totalAppointments = profAppointments.length;
@@ -117,7 +170,7 @@ export function ProfessionalDailyView({
       .filter(a => a.status !== 'cancelled')
       .reduce((sum, a) => sum + (a.duration || 0), 0);
     
-    const workDayMinutes = 600; // 10 hours
+    const workDayMinutes = 600;
     const occupationPercentage = Math.min(Math.round((occupiedMinutes / workDayMinutes) * 100), 100);
 
     return {
@@ -154,6 +207,88 @@ export function ProfessionalDailyView({
   const handleNextDay = () => onDateChange(addDays(selectedDate, 1));
   const handleToday = () => onDateChange(new Date());
 
+  // Drag and Drop handlers
+  const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
+    if (!canEdit || !onReassignProfessional) return;
+    setDraggedAppointment(appointment);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', appointment.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedAppointment(null);
+    setDragOverProfessional(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, professionalId: string) => {
+    if (!draggedAppointment || !canEdit) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverProfessional(professionalId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverProfessional(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetProfessionalId: string) => {
+    e.preventDefault();
+    setDragOverProfessional(null);
+    
+    if (!draggedAppointment || !onReassignProfessional) return;
+    
+    // Don't do anything if dropping on the same professional
+    if (draggedAppointment.professionals.includes(targetProfessionalId)) {
+      setDraggedAppointment(null);
+      return;
+    }
+
+    const targetProfName = professionals.find(p => p.id === targetProfessionalId)?.name || '';
+    
+    onReassignProfessional(
+      draggedAppointment.id,
+      targetProfessionalId,
+      () => {
+        // Conflict callback - show dialog
+        setProfessionalConflictDialog({
+          open: true,
+          appointmentId: draggedAppointment.id,
+          targetProfessionalName: targetProfName,
+        });
+      }
+    );
+    
+    setDraggedAppointment(null);
+  };
+
+  // Quick time change with conflict handling
+  const handleTimeSelect = (appointmentId: string, newTime: string) => {
+    if (!onQuickTimeChange) return;
+    
+    onQuickTimeChange(
+      appointmentId,
+      newTime,
+      (availableSlots) => {
+        setTimeConflictDialog({
+          open: true,
+          appointmentId,
+          availableSlots,
+        });
+      }
+    );
+  };
+
+  const handleConflictTimeSelect = (newTime: string) => {
+    if (!onQuickTimeChange) return;
+    
+    onQuickTimeChange(
+      timeConflictDialog.appointmentId,
+      newTime,
+      () => {} // Should not have conflict since we're selecting from available slots
+    );
+    setTimeConflictDialog({ open: false, appointmentId: '', availableSlots: [] });
+  };
+
   return (
     <div className="space-y-4">
       {/* Header with Date Navigation */}
@@ -166,6 +301,9 @@ export function ProfessionalDailyView({
             </h2>
             <p className="text-sm text-muted-foreground">
               {dayAppointments.length} agendamento{dayAppointments.length !== 1 ? 's' : ''} • {professionals.length} profissiona{professionals.length !== 1 ? 'is' : 'l'}
+              {onReassignProfessional && canEdit && (
+                <span className="ml-2 text-xs text-primary">• Arraste para realocar</span>
+              )}
             </p>
           </div>
         </div>
@@ -211,6 +349,7 @@ export function ProfessionalDailyView({
           const stats = getProfessionalStats(professional.id);
           const profAppointments = getProfessionalAppointments(professional.id);
           const isExpanded = expandedProfessional === professional.id;
+          const isDragOver = dragOverProfessional === professional.id;
 
           return (
             <Collapsible
@@ -222,8 +361,12 @@ export function ProfessionalDailyView({
                 className={cn(
                   "transition-all duration-300",
                   isExpanded ? "col-span-1 md:col-span-2 lg:col-span-3" : "",
-                  stats.totalAppointments === 0 && "opacity-60"
+                  stats.totalAppointments === 0 && "opacity-60",
+                  isDragOver && "ring-2 ring-primary ring-offset-2 bg-primary/5"
                 )}
+                onDragOver={(e) => handleDragOver(e, professional.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, professional.id)}
               >
                 {/* Card Header - Clickable */}
                 <CollapsibleTrigger className="w-full">
@@ -301,8 +444,12 @@ export function ProfessionalDailyView({
                           {profAppointments.map((appointment) => (
                             <Card
                               key={appointment.id}
+                              draggable={canEdit && !!onReassignProfessional}
+                              onDragStart={(e) => handleDragStart(e, appointment)}
+                              onDragEnd={handleDragEnd}
                               className={cn(
                                 "p-4 border-l-4 transition-all hover:shadow-md",
+                                canEdit && onReassignProfessional && "cursor-grab active:cursor-grabbing",
                                 appointment.status === 'completed' && "border-l-green-500 bg-green-50/50 dark:bg-green-900/10",
                                 appointment.status === 'confirmed' && "border-l-primary bg-primary/5",
                                 appointment.status === 'scheduled' && "border-l-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10",
@@ -310,16 +457,91 @@ export function ProfessionalDailyView({
                               )}
                             >
                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                                {/* Appointment Info */}
+                                {/* Drag Handle & Appointment Info */}
                                 <div className="flex-1 space-y-2">
                                   <div className="flex items-center justify-between md:justify-start gap-3">
                                     <div className="flex items-center gap-2">
-                                      <Clock className="h-4 w-4 text-primary" />
-                                      <span className="font-bold text-lg">{appointment.time}</span>
+                                      {canEdit && onReassignProfessional && (
+                                        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                                      )}
+                                      
+                                      {/* Quick Time Edit */}
+                                      {onQuickTimeChange && canEdit ? (
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-auto p-1 hover:bg-primary/10"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <Clock className="h-4 w-4 text-primary mr-1" />
+                                              <span className="font-bold text-lg">{appointment.time}</span>
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-48 p-2" align="start">
+                                            <p className="text-xs text-muted-foreground mb-2">Alterar horário:</p>
+                                            <ScrollArea className="h-48">
+                                              <div className="space-y-1">
+                                                {allTimeSlots.map((slot) => (
+                                                  <Button
+                                                    key={slot}
+                                                    variant={slot === appointment.time ? "secondary" : "ghost"}
+                                                    size="sm"
+                                                    className="w-full justify-start"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      if (slot !== appointment.time) {
+                                                        handleTimeSelect(appointment.id, slot);
+                                                      }
+                                                    }}
+                                                  >
+                                                    {slot}
+                                                  </Button>
+                                                ))}
+                                              </div>
+                                            </ScrollArea>
+                                          </PopoverContent>
+                                        </Popover>
+                                      ) : (
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-4 w-4 text-primary" />
+                                          <span className="font-bold text-lg">{appointment.time}</span>
+                                        </div>
+                                      )}
                                     </div>
-                                    <Badge variant={getStatusVariant(appointment.status)}>
-                                      {getStatusLabel(appointment.status)}
-                                    </Badge>
+                                    
+                                    {/* Quick Status Edit */}
+                                    {onQuickStatusChange && canEdit ? (
+                                      <Select
+                                        value={appointment.status}
+                                        onValueChange={(value) => {
+                                          onQuickStatusChange(appointment.id, value as Appointment['status']);
+                                        }}
+                                      >
+                                        <SelectTrigger 
+                                          className="w-auto h-auto border-0 p-0 focus:ring-0"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Badge variant={getStatusVariant(appointment.status)} className="cursor-pointer">
+                                            {getStatusLabel(appointment.status)}
+                                          </Badge>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {statusOptions.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                              <Badge variant={getStatusVariant(status)}>
+                                                {getStatusLabel(status)}
+                                              </Badge>
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Badge variant={getStatusVariant(appointment.status)}>
+                                        {getStatusLabel(appointment.status)}
+                                      </Badge>
+                                    )}
                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -421,6 +643,81 @@ export function ProfessionalDailyView({
           );
         })}
       </div>
+
+      {/* Time Conflict Dialog */}
+      <Dialog 
+        open={timeConflictDialog.open} 
+        onOpenChange={(open) => !open && setTimeConflictDialog({ open: false, appointmentId: '', availableSlots: [] })}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Horário Ocupado
+            </DialogTitle>
+            <DialogDescription>
+              O horário selecionado está ocupado. Escolha um dos horários disponíveis abaixo:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {timeConflictDialog.availableSlots.length > 0 ? (
+              <ScrollArea className="h-48">
+                <div className="grid grid-cols-3 gap-2">
+                  {timeConflictDialog.availableSlots.map((slot) => (
+                    <Button
+                      key={slot}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleConflictTimeSelect(slot)}
+                    >
+                      {slot}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhum horário disponível para este dia.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setTimeConflictDialog({ open: false, appointmentId: '', availableSlots: [] })}
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Professional Conflict Dialog */}
+      <Dialog 
+        open={professionalConflictDialog.open} 
+        onOpenChange={(open) => !open && setProfessionalConflictDialog({ open: false, appointmentId: '', targetProfessionalName: '' })}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Conflito de Horário
+            </DialogTitle>
+            <DialogDescription>
+              {professionalConflictDialog.targetProfessionalName} já possui um agendamento neste horário. 
+              Escolha outro horário ou profissional.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setProfessionalConflictDialog({ open: false, appointmentId: '', targetProfessionalName: '' })}
+            >
+              Entendi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
