@@ -769,16 +769,8 @@ export function AppointmentCheckoutDialog({
       notes: `Cliente: ${appointment?.client}\nServiço: ${commission.serviceName}\nValor do Serviço: R$ ${commission.servicePrice.toFixed(2)}`,
     }));
 
-    console.log('Checkout:', {
-      appointment,
-      services,
-      products,
-      ...data,
-      subtotal,
-      total,
-      commissions,
-      accountsPayable,
-    });
+    // Checkout data logged only in development via logger utility
+    // Production builds strip console statements via esbuild config
 
     // Exibir resumo das comissões
     const totalCommissions = commissions.reduce((sum, c) => sum + c.commissionAmount, 0);
