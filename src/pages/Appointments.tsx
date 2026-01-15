@@ -399,7 +399,7 @@ const isTimeSlotAvailable = (
     return professionalAppointments.every(apt => {
       const [aptHours, aptMinutes] = apt.time.split(':').map(Number);
       const aptStart = aptHours * 60 + aptMinutes;
-      const aptEnd = aptStart + apt.duration;
+      const aptEnd = aptStart + (apt.duration || 30); // Default to 30 min if duration is undefined
 
       // No overlap if slot ends before appointment starts or starts after appointment ends
       return slotEnd <= aptStart || slotStart >= aptEnd;
