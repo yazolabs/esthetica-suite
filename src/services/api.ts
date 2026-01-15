@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '@/lib/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8010/api';
 
@@ -20,7 +21,7 @@ api.interceptors.request.use(
           config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (error) {
-        console.error('Error parsing auth data:', error);
+        logger.error('Error parsing auth data:', error);
       }
     }
     return config;
