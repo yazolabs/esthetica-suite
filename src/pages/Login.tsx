@@ -112,12 +112,7 @@ export default function Login() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
 
-            <div className="rounded-lg bg-muted p-4 text-sm">
-              <p className="font-semibold mb-2">Credenciais de teste:</p>
-              <p>Admin: <code className="bg-background px-2 py-1 rounded">admin / admin123</code></p>
-              <p>Manager: <code className="bg-background px-2 py-1 rounded">manager / manager123</code></p>
-              <p>Professional: <code className="bg-background px-2 py-1 rounded">professional / professional123</code></p>
-            </div>
+            {/* Credential hints removed for security */}
           </form>
         </CardContent>
       </Card>

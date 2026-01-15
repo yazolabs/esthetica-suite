@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { usePermission } from '@/hooks/usePermission';
 import { Badge } from '@/components/ui/badge';
+import { validateWebhookUrl, getWebhookValidationError } from '@/lib/webhookValidation';
 
 const promotionSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -23,7 +24,12 @@ const promotionSchema = z.object({
   discount: z.string().optional(),
   startDate: z.string().min(1, 'Data de início é obrigatória'),
   endDate: z.string().min(1, 'Data de término é obrigatória'),
-  n8nWebhook: z.string().url('URL do webhook N8N inválida'),
+  n8nWebhook: z.string()
+    .url('URL do webhook N8N inválida')
+    .refine(
+      (url) => validateWebhookUrl(url).valid,
+      (url) => ({ message: getWebhookValidationError(url) })
+    ),
   status: z.enum(['draft', 'active', 'paused', 'completed']),
 });
 
@@ -110,6 +116,19 @@ export default function Promotions() {
 
   const handleTriggerCampaign = async (promotion: Promotion) => {
     setTriggering(promotion.id);
+    
+    // Validate webhook URL before triggering (defense in depth)
+    const validationResult = validateWebhookUrl(promotion.n8nWebhook);
+    if (!validationResult.valid) {
+      toast({
+        title: 'URL do webhook inválida',
+        description: validationResult.error || 'A URL do webhook não é válida.',
+        variant: 'destructive',
+      });
+      setTriggering(null);
+      return;
+    }
+    
     try {
       const response = await fetch(promotion.n8nWebhook, {
         method: 'POST',
@@ -132,7 +151,7 @@ export default function Promotions() {
     } catch (error) {
       toast({
         title: 'Erro ao disparar campanha',
-        description: 'Verifique a URL do webhook e tente novamente.',
+        description: 'Ocorreu um erro ao enviar a requisição. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
