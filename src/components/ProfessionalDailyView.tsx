@@ -529,6 +529,9 @@ export function ProfessionalDailyView({
                                 <div className="flex-1 space-y-2">
                                   <div className="flex items-center justify-between md:justify-start gap-3">
                                     <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs font-mono text-muted-foreground">
+                                        #{appointment.id}
+                                      </Badge>
                                       {canEdit && onReassignProfessional && (
                                         <GripVertical className="h-4 w-4 text-muted-foreground/50" />
                                       )}
